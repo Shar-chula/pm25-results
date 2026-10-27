@@ -1,0 +1,649 @@
+<title>PM2.5 Forecast Results — Thailand</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout concept: tall Thailand silhouette as primary nav on the left (top on
+   phone), a compact city chip rail for fast selection, and a results panel
+   that swaps in per-city tables on the right (below on phone). */
+:root{
+  --paper:#FBFBF8; --paper2:#F0EEE4; --card:#FFFFFF;
+  --ink:#1E2A32; --ink-soft:#4A5568; --muted:#8A9690;
+  --green:#2F6F4E; --green-light:#DCEADF;
+  --rust:#B5542E; --rust-light:#F3DFD4;
+  --amber:#AD7F22; --amber-light:#F3E8D2;
+  --border:#DEDCCF;
+  --map-land:#2F6F4E; --map-land-dim:#9FB7A9; --map-sea:#EAF0EA;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1A221E; --paper2:#212B25; --card:#202A24;
+    --ink:#ECEAE0; --ink-soft:#B7C2BA; --muted:#7E8C84;
+    --green:#74C396; --green-light:#243830;
+    --rust:#E2906A; --rust-light:#3B2A20;
+    --amber:#E4C077; --amber-light:#3A3220;
+    --border:#38443C;
+    --map-land:#3C5C4C; --map-land-dim:#2C3E35; --map-sea:#161E1A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1A221E; --paper2:#212B25; --card:#202A24;
+  --ink:#ECEAE0; --ink-soft:#B7C2BA; --muted:#7E8C84;
+  --green:#74C396; --green-light:#243830;
+  --rust:#E2906A; --rust-light:#3B2A20;
+  --amber:#E4C077; --amber-light:#3A3220;
+  --border:#38443C;
+  --map-land:#3C5C4C; --map-land-dim:#2C3E35; --map-sea:#161E1A;
+  color-scheme: dark;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:'IBM Plex Sans', Arial, sans-serif;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+}
+h1,h2,h3{font-family:'Source Serif 4', Georgia, serif; font-weight:600; margin:0; text-wrap:balance}
+.wrap{max-width:1180px; margin:0 auto; padding-block:36px 64px}
+header.top{display:flex; flex-direction:column; gap:10px; margin-bottom:28px}
+.eyebrow{font-size:13px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--green)}
+h1{font-size:clamp(28px,4vw,40px); line-height:1.1}
+.lede{font-size:16px; color:var(--ink-soft); max-width:62ch; line-height:1.5}
+
+.layout{display:grid; grid-template-columns:minmax(260px,320px) 1fr; gap:28px; align-items:start}
+@media (max-width:860px){ .layout{grid-template-columns:1fr} }
+
+.map-col{display:flex; flex-direction:column; gap:16px; position:sticky; top:16px}
+@media (max-width:860px){ .map-col{position:static} }
+
+.map-card{
+  background:var(--card); border:1px solid var(--border); border-radius:18px;
+  padding:18px; display:flex; flex-direction:column; gap:12px;
+}
+.map-card svg{width:100%; height:auto; display:block}
+.map-land{fill:var(--map-land)}
+.marker{cursor:pointer}
+.marker circle.dot{stroke:var(--card); stroke-width:3; transition:r .15s ease}
+.marker:hover circle.dot, .marker.active circle.dot{r:6.8}
+.marker.active circle.ring{opacity:1}
+.marker circle.ring{fill:none; stroke:var(--ink); stroke-width:2; opacity:0; transition:opacity .15s ease}
+.marker circle.hit{fill:transparent}
+.bangkok-mark{cursor:pointer}
+.bangkok-mark path{stroke:var(--card); stroke-width:2.5}
+
+.legend{display:flex; flex-wrap:wrap; gap:10px 16px; font-size:12.5px; color:var(--ink-soft)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:10px; height:10px; border-radius:50%; display:inline-block; flex:none}
+
+.chip-rail{display:flex; flex-wrap:wrap; gap:8px}
+.chip{
+  font-family:'IBM Plex Sans',Arial,sans-serif; font-size:13px; font-weight:600;
+  border:1px solid var(--border); background:var(--card); color:var(--ink);
+  border-radius:999px; padding:7px 13px; cursor:pointer; display:inline-flex;
+  align-items:center; gap:7px; line-height:1;
+}
+.chip i{width:8px;height:8px;border-radius:50%;flex:none}
+.chip.active{border-color:var(--ink); background:var(--paper2)}
+.chip:focus-visible, .marker:focus-visible circle.dot{outline:2px solid var(--green); outline-offset:2px}
+
+.panel{
+  background:var(--card); border:1px solid var(--border); border-radius:18px;
+  padding:clamp(22px,3vw,36px); min-width:0;
+}
+.panel-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px}
+.panel-head h2{font-size:clamp(24px,3vw,32px)}
+.badge{
+  font-size:12px; font-weight:600; letter-spacing:.3px; padding:5px 11px; border-radius:999px;
+  white-space:nowrap;
+}
+.badge.win{background:var(--green-light); color:var(--green)}
+.badge.mixed{background:var(--amber-light); color:var(--amber)}
+.badge.loss{background:var(--rust-light); color:var(--rust)}
+.badge.home{background:var(--paper2); color:var(--ink-soft)}
+
+.panel-note{font-size:14.5px; color:var(--ink-soft); line-height:1.55; max-width:72ch; margin-top:4px}
+.flags{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
+.flag{
+  font-size:12px; font-weight:600; color:var(--ink-soft); background:var(--paper2);
+  border:1px solid var(--border); border-radius:8px; padding:5px 10px;
+}
+
+.section-title{
+  font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase;
+  color:var(--muted); margin:28px 0 10px;
+}
+.section-title:first-of-type{margin-top:22px}
+
+.table-scroll{overflow-x:auto; border:1px solid var(--border); border-radius:12px}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:14px}
+th,td{padding:10px 14px; text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left; white-space:normal}
+thead th{background:var(--paper2); color:var(--ink-soft); font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.4px}
+tbody tr{border-top:1px solid var(--border)}
+tbody tr.hi{background:var(--green-light)}
+tbody tr.hi td{color:var(--green); font-weight:700}
+tbody tr.dim td{color:var(--muted)}
+td.best{font-weight:700}
+
+.stat-row{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px}
+@media (max-width:520px){ .stat-row{grid-template-columns:1fr} }
+.stat{background:var(--paper2); border-radius:12px; padding:14px 16px}
+.stat .k{font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px}
+.stat .v{font-family:'Source Serif 4', Georgia, serif; font-size:24px; font-weight:600}
+.stat .v small{font-family:'IBM Plex Sans',Arial,sans-serif; font-size:13px; font-weight:600; color:var(--ink-soft)}
+
+.horizon-note{font-size:13.5px; color:var(--ink-soft); margin-top:10px; line-height:1.5}
+
+.chart-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+@media (max-width:620px){ .chart-grid{grid-template-columns:1fr} }
+.chart-card{border:1px solid var(--border); border-radius:14px; padding:16px 16px 10px; min-width:0}
+.chart-card.wide{grid-column:1 / -1}
+.chart-card h4{font-size:13px; font-weight:600; color:var(--ink-soft); margin:0 0 10px}
+.chart-card svg{width:100%; height:auto; display:block; overflow:visible}
+.chart-axis-line{stroke:var(--border); stroke-width:1}
+.chart-grid-line{stroke:var(--border); stroke-width:1; stroke-dasharray:2 3}
+.chart-tick{font-size:10px; fill:var(--muted)}
+.cmp-line{fill:none; stroke-linecap:round; stroke-linejoin:round; transition:opacity .15s ease, stroke-width .15s ease}
+.cmp-dot{transition:opacity .15s ease}
+.cmp-bar{transition:opacity .15s ease}
+.cmp-bar-label{font-size:10.5px; fill:var(--ink-soft); font-variant-numeric:tabular-nums}
+.cmp-bar-label.best{fill:var(--green); font-weight:700}
+.cmp-row-label{font-size:10.5px; fill:var(--ink-soft)}
+.cmp-row-label.hi{fill:var(--ink); font-weight:700}
+.cmp-row-label.hi2{fill:var(--ink); font-weight:600}
+
+.cmp-legend{display:flex; flex-wrap:wrap; gap:6px 10px; margin-top:14px}
+.cmp-chip{
+  font-size:11.5px; font-weight:600; color:var(--ink-soft); background:var(--paper2);
+  border:1px solid transparent; border-radius:999px; padding:4px 10px 4px 8px;
+  cursor:pointer; display:inline-flex; align-items:center; gap:6px; line-height:1.2;
+}
+.cmp-chip i{width:9px; height:3px; border-radius:2px; flex:none}
+.cmp-chip.is-active{border-color:var(--ink); color:var(--ink); background:var(--card)}
+.cmp-chip.is-dim{opacity:.5}
+
+footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px solid var(--border); padding-top:16px}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Hybrid CNN-BiLSTM PM2.5 Forecasting — Thesis Results</p>
+    <h1>Click a city for its results</h1>
+    <p class="lede">Bangkok is the city the model was trained on, compared against ten baseline methods. The other nine are tested with no retraining at all, to see how well a Bangkok-trained model generalizes across Thailand.</p>
+  </header>
+
+  <div class="layout">
+    <div class="map-col">
+      <div class="map-card">
+        <svg viewBox="0 0 349 603" role="img" aria-label="Map of Thailand with Bangkok and nine other test cities">
+          <path class="map-land" d="M 115.0,20.0 L 113.0,24.0 L 109.0,25.0 L 100.0,22.0 L 99.0,23.0 L 104.0,28.0 L 104.0,30.0 L 100.0,34.0 L 86.0,33.0 L 84.0,36.0 L 83.0,47.0 L 77.0,45.0 L 75.0,47.0 L 70.0,47.0 L 67.0,50.0 L 54.0,50.0 L 48.0,45.0 L 48.0,51.0 L 41.0,55.0 L 42.0,59.0 L 37.0,65.0 L 41.0,69.0 L 41.0,73.0 L 36.0,75.0 L 35.0,79.0 L 37.0,82.0 L 38.0,92.0 L 36.0,94.0 L 31.0,94.0 L 28.0,97.0 L 25.0,97.0 L 20.0,93.0 L 28.0,105.0 L 30.0,103.0 L 33.0,104.0 L 36.0,114.0 L 35.0,123.0 L 38.0,125.0 L 39.0,129.0 L 55.0,146.0 L 57.0,152.0 L 61.0,152.0 L 64.0,155.0 L 67.0,167.0 L 65.0,168.0 L 71.0,175.0 L 71.0,183.0 L 77.0,177.0 L 81.0,178.0 L 81.0,183.0 L 78.0,188.0 L 72.0,188.0 L 68.0,193.0 L 68.0,216.0 L 64.0,216.0 L 61.0,221.0 L 56.0,220.0 L 56.0,222.0 L 53.0,224.0 L 53.0,229.0 L 55.0,230.0 L 55.0,235.0 L 59.0,243.0 L 67.0,252.0 L 69.0,260.0 L 76.0,262.0 L 81.0,266.0 L 84.0,273.0 L 89.0,279.0 L 91.0,297.0 L 87.0,303.0 L 87.0,306.0 L 92.0,310.0 L 92.0,319.0 L 98.0,325.0 L 99.0,334.0 L 104.0,340.0 L 103.0,344.0 L 106.0,346.0 L 104.0,351.0 L 107.0,352.0 L 105.0,359.0 L 99.0,360.0 L 100.0,365.0 L 95.0,370.0 L 93.0,378.0 L 87.0,385.0 L 83.0,386.0 L 83.0,389.0 L 81.0,391.0 L 77.0,392.0 L 74.0,396.0 L 77.0,403.0 L 68.0,421.0 L 65.0,424.0 L 63.0,439.0 L 61.0,444.0 L 58.0,446.0 L 57.0,459.0 L 53.0,468.0 L 53.0,479.0 L 57.0,485.0 L 54.0,505.0 L 56.0,505.0 L 56.0,502.0 L 58.0,500.0 L 57.0,496.0 L 61.0,493.0 L 68.0,494.0 L 70.0,490.0 L 76.0,493.0 L 82.0,493.0 L 82.0,511.0 L 84.0,512.0 L 88.0,507.0 L 91.0,507.0 L 93.0,509.0 L 93.0,515.0 L 97.0,520.0 L 97.0,524.0 L 103.0,524.0 L 108.0,529.0 L 110.0,540.0 L 120.0,547.0 L 122.0,554.0 L 126.0,550.0 L 125.0,544.0 L 128.0,543.0 L 131.0,545.0 L 132.0,551.0 L 148.0,552.0 L 151.0,556.0 L 152.0,562.0 L 156.0,560.0 L 160.0,561.0 L 159.0,565.0 L 161.0,566.0 L 161.0,573.0 L 156.0,574.0 L 155.0,578.0 L 162.0,583.0 L 166.0,581.0 L 167.0,576.0 L 172.0,576.0 L 175.0,574.0 L 179.0,574.0 L 182.0,578.0 L 187.0,579.0 L 191.0,574.0 L 190.0,571.0 L 196.0,566.0 L 196.0,561.0 L 189.0,557.0 L 181.0,549.0 L 180.0,543.0 L 175.0,538.0 L 171.0,538.0 L 166.0,535.0 L 164.0,539.0 L 155.0,539.0 L 151.0,534.0 L 147.0,535.0 L 141.0,529.0 L 141.0,526.0 L 136.0,523.0 L 134.0,514.0 L 129.0,514.0 L 128.0,508.0 L 126.0,506.0 L 127.0,502.0 L 133.0,497.0 L 132.0,493.0 L 129.0,491.0 L 115.0,491.0 L 113.0,489.0 L 113.0,484.0 L 109.0,481.0 L 110.0,469.0 L 112.0,467.0 L 114.0,458.0 L 113.0,454.0 L 109.0,452.0 L 110.0,446.0 L 101.0,448.0 L 100.0,451.0 L 91.0,450.0 L 90.0,445.0 L 93.0,443.0 L 93.0,441.0 L 87.0,435.0 L 86.0,421.0 L 89.0,418.0 L 92.0,418.0 L 96.0,422.0 L 98.0,422.0 L 96.0,413.0 L 97.0,407.0 L 93.0,405.0 L 94.0,398.0 L 98.0,395.0 L 99.0,389.0 L 102.0,387.0 L 101.0,380.0 L 108.0,360.0 L 114.0,353.0 L 113.0,349.0 L 121.0,339.0 L 121.0,332.0 L 117.0,328.0 L 119.0,317.0 L 123.0,308.0 L 120.0,303.0 L 120.0,295.0 L 122.0,292.0 L 129.0,289.0 L 136.0,290.0 L 145.0,286.0 L 153.0,289.0 L 155.0,292.0 L 155.0,305.0 L 152.0,308.0 L 148.0,309.0 L 148.0,312.0 L 156.0,323.0 L 174.0,323.0 L 180.0,321.0 L 188.0,321.0 L 191.0,323.0 L 191.0,326.0 L 197.0,332.0 L 205.0,336.0 L 207.0,340.0 L 213.0,339.0 L 218.0,342.0 L 221.0,350.0 L 228.0,358.0 L 220.0,339.0 L 223.0,329.0 L 219.0,327.0 L 213.0,320.0 L 214.0,307.0 L 209.0,303.0 L 207.0,299.0 L 207.0,287.0 L 215.0,286.0 L 216.0,281.0 L 222.0,277.0 L 222.0,273.0 L 229.0,268.0 L 229.0,262.0 L 237.0,257.0 L 245.0,257.0 L 253.0,253.0 L 261.0,257.0 L 278.0,255.0 L 292.0,256.0 L 294.0,254.0 L 302.0,254.0 L 305.0,259.0 L 310.0,261.0 L 313.0,254.0 L 322.0,254.0 L 326.0,248.0 L 324.0,240.0 L 328.0,232.0 L 323.0,227.0 L 323.0,224.0 L 326.0,221.0 L 324.0,217.0 L 327.0,215.0 L 329.0,207.0 L 327.0,204.0 L 320.0,202.0 L 318.0,197.0 L 320.0,193.0 L 307.0,190.0 L 303.0,180.0 L 296.0,174.0 L 295.0,153.0 L 298.0,147.0 L 298.0,140.0 L 277.0,120.0 L 275.0,114.0 L 267.0,103.0 L 263.0,104.0 L 243.0,98.0 L 241.0,106.0 L 237.0,109.0 L 234.0,115.0 L 226.0,117.0 L 219.0,123.0 L 213.0,122.0 L 207.0,114.0 L 197.0,107.0 L 191.0,114.0 L 186.0,114.0 L 185.0,118.0 L 183.0,120.0 L 180.0,120.0 L 177.0,126.0 L 173.0,126.0 L 164.0,135.0 L 157.0,133.0 L 157.0,124.0 L 165.0,113.0 L 165.0,107.0 L 162.0,105.0 L 160.0,98.0 L 167.0,90.0 L 167.0,78.0 L 171.0,75.0 L 167.0,71.0 L 165.0,59.0 L 168.0,56.0 L 166.0,54.0 L 161.0,55.0 L 156.0,53.0 L 150.0,58.0 L 144.0,56.0 L 140.0,57.0 L 138.0,55.0 L 136.0,47.0 L 142.0,35.0 L 142.0,32.0 L 139.0,31.0 L 132.0,22.0 L 130.0,22.0 L 128.0,26.0 L 124.0,27.0 L 123.0,21.0 Z"/>
+
+          <g id="markers" font-family="'IBM Plex Sans',Arial,sans-serif"></g>
+        </svg>
+
+        <div class="legend" id="legend">
+          <span><i style="background:var(--green)"></i>Beats both naive baselines</span>
+          <span><i style="background:var(--amber)"></i>Narrow exception</span>
+          <span><i style="background:var(--rust)"></i>Loses on average</span>
+          <span><svg width="10" height="10" style="flex:none"><path d="M5 0 L10 5 L5 10 L0 5 Z" fill="currentColor"/></svg>Bangkok (training city)</span>
+        </div>
+      </div>
+
+      <div class="chip-rail" id="chipRail"></div>
+    </div>
+
+    <div class="panel" id="panel"></div>
+  </div>
+
+  <footer>Source: Chapter 4 results tables (model evaluation across 12 forecast horizons). Map outline is a simplified illustrative silhouette, not a surveyed boundary. Chiang Mai, Chiang Rai, Khon Kaen and Nan use elevation-corrected surface pressure, shifted to match Bangkok's training mean; the other cities needed no correction.</footer>
+</div>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+
+<script>
+(function(){
+  "use strict";
+
+  var COORDS = {
+    bangkok:      {x:137.5, y:274.2},
+    chiangmai:    {x: 81.0, y: 83.7},
+    chiangrai:    {x:112.8, y: 41.2},
+    nan:          {x:148.0, y: 83.9},
+    khonkaen:     {x:224.5, y:172.5},
+    kanchanaburi: {x:101.3, y:264.2},
+    pattaya:      {x:151.7, y:305.7},
+    siracha:      {x:153.4, y:296.2},
+    hatyai:       {x:136.2, y:529.4},
+    phuket:       {x: 59.1, y:496.7}
+  };
+
+  // All figures below are transcribed from the thesis's Chapter 4 results
+  // tables (Tables 15-18 for Bangkok; Tables 20-24 for the nine-city test).
+  var DATA = {
+    bangkok: {
+      name: "Bangkok", role: "home", badge: "home", badgeLabel: "Training city",
+      note: "The model is trained here and compared against ten baseline methods across all twelve forecast horizons. This is the only city with a full ten-way comparison.",
+      baseline: [
+        {m:"Proposed (tuned)",        h1:.937, h3:.823, h6:.707, h12:.623, avg:.727, rmse1:3.570, rmse3:6.003, rmse6:7.768, rmse12:8.904, rmseAvg:7.339, smape:29.295, hi:true},
+        {m:"CNN-BiLSTM (no weather forecast/penalty)", h1:.906, h3:.791, h6:.663, h12:.626, avg:.703, rmse1:4.361, rmse3:6.523, rmse6:8.330, rmse12:8.869, rmseAvg:7.711, smape:30.911},
+        {m:"Ridge (last-step features)", h1:.902, h3:.787, h6:.660, h12:.592, avg:.693, rmse1:4.453, rmse3:6.585, rmse6:8.367, rmse12:9.263, rmseAvg:7.830, smape:28.433},
+        {m:"XGBoost (last-step features)", h1:.898, h3:.790, h6:.668, h12:.587, avg:.691, rmse1:4.543, rmse3:6.538, rmse6:8.268, rmse12:9.320, rmseAvg:7.870, smape:28.386, smapeBest:true},
+        {m:"GRU", h1:.864, h3:.765, h6:.669, h12:.582, avg:.690, rmse1:5.246, rmse3:6.917, rmse6:8.256, rmse12:9.376, rmseAvg:7.919, smape:29.210},
+        {m:"LSTM", h1:.856, h3:.756, h6:.663, h12:.582, avg:.686, rmse1:5.398, rmse3:7.048, rmse6:8.330, rmse12:9.376, rmseAvg:7.979, smape:31.184},
+        {m:"BiLSTM", h1:.832, h3:.747, h6:.663, h12:.598, avg:.680, rmse1:5.831, rmse3:7.177, rmse6:8.491, rmse12:9.195, rmseAvg:8.070, smape:30.991},
+        {m:"CNN-LSTM", h1:.828, h3:.755, h6:.662, h12:.586, avg:.676, rmse1:5.900, rmse3:7.062, rmse6:8.343, rmse12:9.331, rmseAvg:8.121, smape:30.345},
+        {m:"Persistence", h1:.932, h3:.767, h6:.512, h12:.287, avg:.534, rmse1:3.709, rmse3:6.887, rmse6:10.024, rmse12:12.245, rmseAvg:9.443, smape:34.899},
+        {m:"Seasonal naive (24h)", h1:.507, h3:.507, h6:.511, h12:.524, avg:.513, rmse1:9.988, rmse3:10.018, rmse6:10.035, rmse12:10.005, rmseAvg:10.020, smape:39.074},
+        {m:"Moving average (k=6)", h1:.793, h3:.634, h6:.455, h12:.374, avg:.496, rmse1:6.47, rmse3:8.63, rmse6:10.59, rmse12:11.48, rmseAvg:10.082, smape:37.378, dim:true}
+      ],
+      callouts: [
+        "The proposed model leads on R²/RMSE every horizon except h=9 (LSTM) and h=10–12, where the no-weather CNN-BiLSTM baseline edges ahead — the combined weather mechanism's advantage is concentrated in the short-to-medium horizons.",
+        "Ridge and XGBoost actually beat the proposed model on sMAPE (28.4% vs 29.3%), even though they trail on R²/RMSE — R²/RMSE weight large absolute errors, sMAPE weights relative error, and the two metrics disagree here."
+      ]
+    },
+
+    chiangmai: {
+      name: "Chiang Mai", role:"city", badge:"win", badgeLabel:"Beats both baselines",
+      elevationCorrected: true,
+      h1: {modelR2:.9303, persistR2:.9349, dR2:-.0046, modelRmse:3.304, persistRmse:3.193, dRmse:-.111},
+      avg: {modelRmse:6.223, persistRmse:6.665, seasonalRmse:8.150, modelSmape:22.43, persistSmape:23.70, seasonalSmape:31.11},
+      mech: {proposedR2:.7451, baselineR2:.6789, proposedRmse:6.223, baselineRmse:7.049, proposedSmape:22.43, baselineSmape:25.75},
+      loses: "Loses to persistence only at h=1–2 (a strong, stable local series at the very start of the window). Never loses to seasonal naive.",
+      note: "Elevation correction moved Chiang Mai's average R² from 0.430 (below persistence) to 0.745 (above it) — without it, surface pressure sits about 12 training standard deviations out of distribution."
+    },
+    chiangrai: {
+      name: "Chiang Rai", role:"city", badge:"win", badgeLabel:"Beats both baselines",
+      elevationCorrected: true,
+      h1: {modelR2:.9550, persistR2:.9550, dR2:.0001, modelRmse:6.968, persistRmse:6.974, dRmse:.006},
+      avg: {modelRmse:14.038, persistRmse:15.187, seasonalRmse:16.637, modelSmape:40.38, persistSmape:36.31, seasonalSmape:45.32},
+      mech: {proposedR2:.8012, baselineR2:.7419, proposedRmse:14.038, baselineRmse:16.463, proposedSmape:40.38, baselineSmape:42.95},
+      loses: "Never loses to persistence. Loses to seasonal naive only at h=9–12, the same long-horizon erosion seen in Bangkok itself.",
+      note: "Elevation-corrected: surface pressure shifted to match Bangkok's training mean before this city was tested."
+    },
+    nan: {
+      name: "Nan", role:"city", badge:"mixed", badgeLabel:"Narrow exception",
+      elevationCorrected: true,
+      h1: {modelR2:.9382, persistR2:.9363, dR2:.0019, modelRmse:7.820, persistRmse:7.941, dRmse:.121},
+      avg: {modelRmse:17.060, persistRmse:19.355, seasonalRmse:17.398, modelSmape:40.86, persistSmape:42.78, seasonalSmape:47.36},
+      mech: {proposedR2:.6885, baselineR2:.5992, proposedRmse:17.060, baselineRmse:19.850, proposedSmape:40.86, baselineSmape:43.03},
+      loses: "Never loses to persistence. Loses to seasonal naive from h=6 onward — on RMSE and sMAPE the model still wins on average, but average R² (0.6885) lands just under seasonal naive's (0.6930).",
+      note: "Elevation-corrected: surface pressure shifted to match Bangkok's training mean before this city was tested."
+    },
+    khonkaen: {
+      name: "Khon Kaen", role:"city", badge:"win", badgeLabel:"Beats both baselines",
+      elevationCorrected: true,
+      h1: {modelR2:.9173, persistR2:.9166, dR2:.0007, modelRmse:5.404, persistRmse:5.428, dRmse:.024},
+      avg: {modelRmse:11.648, persistRmse:14.919, seasonalRmse:13.327, modelSmape:31.45, persistSmape:39.65, seasonalSmape:34.25},
+      mech: {proposedR2:.6032, baselineR2:.5271, proposedRmse:11.648, baselineRmse:12.949, proposedSmape:31.45, baselineSmape:33.83},
+      loses: "Never loses to persistence. Loses to seasonal naive at h=8–10 and h=12.",
+      note: "Elevation-corrected: surface pressure shifted to match Bangkok's training mean before this city was tested. Persistence itself is weak here (R² ≈ 0.334), which is why the model's gain is one of the largest of the nine cities."
+    },
+    kanchanaburi: {
+      name: "Kanchanaburi", role:"city", badge:"win", badgeLabel:"Beats both baselines",
+      h1: {modelR2:.9104, persistR2:.9074, dR2:.0030, modelRmse:6.994, persistRmse:7.110, dRmse:.116},
+      avg: {modelRmse:13.307, persistRmse:15.433, seasonalRmse:14.434, modelSmape:43.45, persistSmape:45.42, seasonalSmape:50.50},
+      mech: {proposedR2:.6612, baselineR2:.6281, proposedRmse:13.307, baselineRmse:14.201, proposedSmape:43.45, baselineSmape:45.51},
+      loses: "Never loses to persistence. Loses to seasonal naive from h=7 onward.",
+      note: "Close enough to sea level that no elevation/pressure correction was needed."
+    },
+    pattaya: {
+      name: "Pattaya", role:"city", badge:"win", badgeLabel:"Beats both baselines",
+      h1: {modelR2:.7552, persistR2:.7537, dR2:.0014, modelRmse:8.009, persistRmse:8.032, dRmse:.023},
+      avg: {modelRmse:10.623, persistRmse:11.512, seasonalRmse:12.601, modelSmape:44.84, persistSmape:44.58, seasonalSmape:50.62},
+      mech: {proposedR2:.5652, baselineR2:.6151, proposedRmse:10.623, baselineRmse:10.021, proposedSmape:44.84, baselineSmape:48.17},
+      loses: "The only city where the model beats both naive baselines at every single horizon, with no exceptions.",
+      note: "Also the one city where the no-weather CNN-BiLSTM baseline beats the full proposed model on R²/RMSE — the weather mechanism still wins on sMAPE here, just not on R²/RMSE.",
+      mechLoss: true
+    },
+    siracha: {
+      name: "Si Racha", role:"city", badge:"win", badgeLabel:"Beats both baselines",
+      h1: {modelR2:.9597, persistR2:.9641, dR2:-.0044, modelRmse:3.249, persistRmse:3.066, dRmse:-.183},
+      avg: {modelRmse:6.961, persistRmse:7.207, seasonalRmse:8.872, modelSmape:69.92, persistSmape:66.64, seasonalSmape:73.45},
+      mech: {proposedR2:.8051, baselineR2:.7480, proposedRmse:6.961, baselineRmse:8.069, proposedSmape:69.92, baselineSmape:78.15},
+      loses: "Loses to persistence at h=1 and briefly at h=6. Never loses to seasonal naive.",
+      note: "Close enough to sea level that no elevation/pressure correction was needed. Highest sMAPE of any city tested, on every method — a comparatively hard series to forecast in relative terms."
+    },
+    hatyai: {
+      name: "Hat Yai", role:"city", badge:"win", badgeLabel:"Beats both baselines",
+      h1: {modelR2:.8343, persistR2:.8341, dR2:-.0002, modelRmse:4.112, persistRmse:4.110, dRmse:-.002},
+      avg: {modelRmse:6.952, persistRmse:7.997, seasonalRmse:8.760, modelSmape:36.79, persistSmape:41.65, seasonalSmape:43.45},
+      mech: {proposedR2:.5112, baselineR2:.4887, proposedRmse:6.952, baselineRmse:7.177, proposedSmape:36.79, baselineSmape:39.48},
+      loses: "Loses to persistence only at h=1, essentially a rounding-level tie. Never loses to seasonal naive.",
+      note: "Close enough to sea level that no elevation/pressure correction was needed. Persistence itself is weak here (R² ≈ 0.343), giving the model plenty of room to add value."
+    },
+    phuket: {
+      name: "Phuket", role:"city", badge:"loss", badgeLabel:"Loses on average",
+      h1: {modelR2:.9771, persistR2:.9559, dR2:.0213, modelRmse:1.336, persistRmse:1.855, dRmse:.520},
+      avg: {modelRmse:4.236, persistRmse:3.240, seasonalRmse:5.158, modelSmape:41.44, persistSmape:32.43, seasonalSmape:44.68},
+      mech: {proposedR2:.7461, baselineR2:.6297, proposedRmse:4.236, baselineRmse:5.196, proposedSmape:41.44, baselineSmape:51.80},
+      loses: "The only total loss anywhere in this thesis: persistence beats the model on every metric, at every one of the 12 forecast horizons.",
+      note: "Phuket's own PM2.5 series is unusually smooth and low-variability — exactly the condition where persistence is hardest to beat. Even so, the weather-informed mechanism specifically still wins here by the largest margin of any city (vs. the no-weather baseline).",
+      phuketCallout: true
+    }
+  };
+
+  var ORDER = ["bangkok","chiangmai","chiangrai","nan","khonkaen","kanchanaburi","pattaya","siracha","hatyai","phuket"];
+
+  function fmt(n, d){ if(n===undefined||n===null) return "—"; d = d===undefined?3:d; return Number(n).toFixed(d); }
+  function pct(n){ return fmt(n,2) + "%"; }
+  function signed(n, d){ var v = fmt(Math.abs(n), d===undefined?3:d); return (n>=0?"+":"−") + v; }
+
+  // ---- Proposed-vs-others comparison charts (Bangkok panel only) --------
+  var CMP_GROUPS = {
+    "Proposed (tuned)": "proposed",
+    "CNN-BiLSTM (no weather forecast/penalty)": "baseline"
+  };
+  function cmpGroup(name){ return CMP_GROUPS[name] || "other"; }
+  var CMP_COLOR = { proposed: "var(--green)", baseline: "var(--rust)", other: "var(--muted)" };
+  var CMP_SHORT = {
+    "Proposed (tuned)": "Proposed",
+    "CNN-BiLSTM (no weather forecast/penalty)": "CNN-BiLSTM (no wx)",
+    "Ridge (last-step features)": "Ridge",
+    "XGBoost (last-step features)": "XGBoost",
+    "GRU": "GRU", "LSTM": "LSTM", "BiLSTM": "BiLSTM", "CNN-LSTM": "CNN-LSTM",
+    "Persistence": "Persistence", "Seasonal naive (24h)": "Seasonal naive",
+    "Moving average (k=6)": "Moving avg (k=6)"
+  };
+
+  function niceAxis(dataMin, dataMax, zeroBase){
+    var lo = zeroBase ? 0 : dataMin, hi = dataMax;
+    if(hi <= lo) hi = lo + 1;
+    var rawStep = (hi - lo) / 4;
+    var mag = Math.pow(10, Math.floor(Math.log(rawStep) / Math.LN10));
+    var norm = rawStep / mag;
+    var step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+    var niceLo = zeroBase ? 0 : Math.floor(lo / step) * step;
+    var niceHi = Math.ceil(hi / step) * step;
+    var ticks = [];
+    for(var t = niceLo; t <= niceHi + step * 1e-6; t += step){ ticks.push(Math.round(t * 1000) / 1000); }
+    return {min: niceLo, max: niceHi, ticks: ticks};
+  }
+
+  function lineChartSvg(baseline, keys, xLabels, opts){
+    opts = opts || {};
+    var W = 300, H = 190, L = 34, R = 10, T = 12, B = 24;
+    var plotW = W - L - R, plotH = H - T - B;
+    var allVals = [];
+    baseline.forEach(function(r){ keys.forEach(function(k){ allVals.push(r[k]); }); });
+    var dataMin = Math.min.apply(null, allVals), dataMax = Math.max.apply(null, allVals);
+    var axis = niceAxis(dataMin, dataMax, !!opts.zeroBase);
+    function xAt(i){ return L + (keys.length === 1 ? plotW / 2 : i * (plotW / (keys.length - 1))); }
+    function yAt(v){ return T + plotH - (v - axis.min) / (axis.max - axis.min) * plotH; }
+
+    var grid = axis.ticks.map(function(t){
+      return "<line class='chart-grid-line' x1='"+L+"' x2='"+(W-R)+"' y1='"+yAt(t)+"' y2='"+yAt(t)+"'/>" +
+        "<text class='chart-tick' x='"+(L-6)+"' y='"+(yAt(t)+3)+"' text-anchor='end'>"+(opts.tickFmt ? opts.tickFmt(t) : t)+"</text>";
+    }).join("");
+
+    var xAxisLabels = xLabels.map(function(lab,i){
+      return "<text class='chart-tick' x='"+xAt(i)+"' y='"+(H-6)+"' text-anchor='middle'>"+lab+"</text>";
+    }).join("");
+
+    var axisLine = "<line class='chart-axis-line' x1='"+L+"' x2='"+L+"' y1='"+T+"' y2='"+(H-B)+"'/>" +
+      "<line class='chart-axis-line' x1='"+L+"' x2='"+(W-R)+"' y1='"+(H-B)+"' y2='"+(H-B)+"'/>";
+
+    var order = baseline.slice().sort(function(a,b){
+      var rank = {other:0, baseline:1, proposed:2};
+      return rank[cmpGroup(a.m)] - rank[cmpGroup(b.m)];
+    });
+
+    var linesHtml = order.map(function(r){
+      var g = cmpGroup(r.m);
+      var pts = keys.map(function(k,i){ return xAt(i)+","+yAt(r[k]); }).join(" L ");
+      var sw = g === "proposed" ? 2.6 : (g === "baseline" ? 2 : 1.3);
+      var op = g === "proposed" ? 1 : (g === "baseline" ? 0.95 : 0.5);
+      var dots = keys.map(function(k,i){
+        var rr = g === "other" ? 2.1 : 3;
+        var val = opts.tooltipFmt ? opts.tooltipFmt(r[k]) : r[k];
+        return "<circle class='cmp-dot grp-"+g+"' cx='"+xAt(i)+"' cy='"+yAt(r[k])+"' r='"+rr+"' fill='"+CMP_COLOR[g]+"' opacity='"+op+"'><title>"+CMP_SHORT[r.m]+" — "+xLabels[i]+": "+val+"</title></circle>";
+      }).join("");
+      return "<path class='cmp-line grp-"+g+"' d='M "+pts+"' stroke='"+CMP_COLOR[g]+"' stroke-width='"+sw+"' opacity='"+op+"'/>" + dots;
+    }).join("");
+
+    return "<svg viewBox='0 0 "+W+" "+H+"' style='aspect-ratio:"+W+"/"+H+"' preserveAspectRatio='xMidYMid meet'>"+grid+axisLine+linesHtml+xAxisLabels+"</svg>";
+  }
+
+  function barChartSvg(baseline){
+    var W = 620, H = 256, L = 176, R = 50, T = 10, B = 22;
+    var rowH = (H - T - B) / baseline.length;
+    var smapeVals = baseline.map(function(r){ return r.smape; });
+    var axis = niceAxis(0, Math.max.apply(null, smapeVals), true);
+    var plotW = W - L - R;
+    function xAt(v){ return L + (v - axis.min) / (axis.max - axis.min) * plotW; }
+
+    var grid = axis.ticks.map(function(t){
+      return "<line class='chart-grid-line' x1='"+xAt(t)+"' x2='"+xAt(t)+"' y1='"+T+"' y2='"+(H-B)+"'/>" +
+        "<text class='chart-tick' x='"+xAt(t)+"' y='"+(H-6)+"' text-anchor='middle'>"+t+"%</text>";
+    }).join("");
+
+    var bars = baseline.map(function(r, idx){
+      var g = cmpGroup(r.m);
+      var y = T + idx * rowH + rowH * 0.18;
+      var bh = rowH * 0.64;
+      var w = Math.max(xAt(r.smape) - L, 1);
+      var labelCls = g === "proposed" ? "cmp-row-label hi grp-"+g : (g === "baseline" ? "cmp-row-label hi2 grp-"+g : "cmp-row-label grp-"+g);
+      var valCls = r.smapeBest ? "cmp-bar-label best grp-"+g : "cmp-bar-label grp-"+g;
+      return "<rect class='cmp-bar grp-"+g+"' x='"+L+"' y='"+y+"' width='"+w+"' height='"+bh+"' rx='2' fill='"+CMP_COLOR[g]+"' opacity='"+(g==="other"?0.55:(g==="baseline"?0.95:1))+"'><title>"+CMP_SHORT[r.m]+": "+r.smape.toFixed(2)+"% sMAPE"+(r.smapeBest?" (lowest overall)":"")+"</title></rect>" +
+        "<text x='"+(L-8)+"' y='"+(y+bh/2+3.5)+"' text-anchor='end' class='"+labelCls+"'>"+CMP_SHORT[r.m]+"</text>" +
+        "<text x='"+(xAt(r.smape)+6)+"' y='"+(y+bh/2+3.5)+"' class='"+valCls+"'>"+r.smape.toFixed(1)+"%</text>";
+    }).join("");
+
+    var axisLine = "<line class='chart-axis-line' x1='"+L+"' x2='"+L+"' y1='"+T+"' y2='"+(H-B)+"'/>";
+
+    return "<svg viewBox='0 0 "+W+" "+H+"' style='aspect-ratio:"+W+"/"+H+"' preserveAspectRatio='xMidYMid meet'>"+grid+axisLine+bars+"</svg>";
+  }
+
+  function cmpLegendHtml(){
+    return "<div class='cmp-legend'>" +
+      "<button type='button' class='cmp-chip is-active' data-group='proposed'><i style='background:var(--green)'></i>Proposed (tuned)</button>" +
+      "<button type='button' class='cmp-chip is-active' data-group='baseline'><i style='background:var(--rust)'></i>CNN-BiLSTM (no weather)</button>" +
+      "<button type='button' class='cmp-chip is-active' data-group='other'><i style='background:var(--muted)'></i>Other 9 methods</button>" +
+      "</div>";
+  }
+
+  function wireComparisonLegend(){
+    var chips = panel.querySelectorAll(".cmp-chip");
+    if(!chips.length) return;
+    var isolated = null;
+    var groups = ["proposed","baseline","other"];
+    function apply(){
+      Array.prototype.forEach.call(chips, function(c){
+        var g = c.getAttribute("data-group");
+        c.classList.toggle("is-active", isolated === null || isolated === g);
+        c.classList.toggle("is-dim", isolated !== null && isolated !== g);
+      });
+      groups.forEach(function(g){
+        var dim = isolated !== null && isolated !== g;
+        Array.prototype.forEach.call(panel.querySelectorAll(".grp-"+g), function(el){
+          el.style.opacity = dim ? 0.12 : "";
+        });
+      });
+    }
+    Array.prototype.forEach.call(chips, function(c){
+      c.addEventListener("click", function(){
+        var g = c.getAttribute("data-group");
+        isolated = (isolated === g) ? null : g;
+        apply();
+      });
+    });
+    apply();
+  }
+
+  var svgNS = "http://www.w3.org/2000/svg";
+  var markersG = document.getElementById("markers");
+  var chipRail = document.getElementById("chipRail");
+  var panel = document.getElementById("panel");
+  var active = "bangkok";
+
+  function badgeClass(key){ return DATA[key].badge; }
+
+  function buildMarkers(){
+    ORDER.forEach(function(key){
+      var c = COORDS[key];
+      var g = document.createElementNS(svgNS, "g");
+      g.setAttribute("class", key === "bangkok" ? "bangkok-mark marker" : "marker");
+      g.setAttribute("data-key", key);
+      g.setAttribute("tabindex", "0");
+      g.setAttribute("role", "button");
+      g.setAttribute("aria-label", DATA[key].name);
+
+      var color = "var(--" + (DATA[key].badge === "win" ? "green" : DATA[key].badge === "mixed" ? "amber" : DATA[key].badge === "loss" ? "rust" : "ink") + ")";
+
+      if(key === "bangkok"){
+        var d = "M " + c.x + " " + (c.y-6.5) + " L " + (c.x+6.5) + " " + c.y + " L " + c.x + " " + (c.y+6.5) + " L " + (c.x-6.5) + " " + c.y + " Z";
+        var p = document.createElementNS(svgNS, "path");
+        p.setAttribute("d", d);
+        p.setAttribute("fill", "var(--ink)");
+        g.appendChild(p);
+        var hit = document.createElementNS(svgNS, "circle");
+        hit.setAttribute("cx", c.x); hit.setAttribute("cy", c.y); hit.setAttribute("r", 11);
+        hit.setAttribute("class","hit");
+        g.appendChild(hit);
+      } else {
+        var ring = document.createElementNS(svgNS, "circle");
+        ring.setAttribute("cx", c.x); ring.setAttribute("cy", c.y); ring.setAttribute("r", 8.7);
+        ring.setAttribute("class", "ring");
+        g.appendChild(ring);
+
+        var dot = document.createElementNS(svgNS, "circle");
+        dot.setAttribute("cx", c.x); dot.setAttribute("cy", c.y); dot.setAttribute("r", 5);
+        dot.setAttribute("class", "dot");
+        dot.setAttribute("fill", color);
+        g.appendChild(dot);
+
+        if(DATA[key].elevationCorrected){
+          var ec = document.createElementNS(svgNS, "circle");
+          ec.setAttribute("cx", c.x); ec.setAttribute("cy", c.y); ec.setAttribute("r", 7.2);
+          ec.setAttribute("fill", "none");
+          ec.setAttribute("stroke", color);
+          ec.setAttribute("stroke-width", "1");
+          ec.setAttribute("stroke-dasharray", "1.8 1.8");
+          ec.setAttribute("opacity", "0.85");
+          g.appendChild(ec);
+        }
+
+        var hit2 = document.createElementNS(svgNS, "circle");
+        hit2.setAttribute("cx", c.x); hit2.setAttribute("cy", c.y); hit2.setAttribute("r", 11);
+        hit2.setAttribute("class","hit");
+        g.appendChild(hit2);
+      }
+
+      g.addEventListener("click", function(){ select(key); });
+      g.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); select(key); } });
+      markersG.appendChild(g);
+    });
+  }
+
+  function buildChips(){
+    ORDER.forEach(function(key){
+      var d = DATA[key];
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.setAttribute("data-key", key);
+      var colorVar = "var(--" + (d.badge === "win" ? "green" : d.badge === "mixed" ? "amber" : d.badge === "loss" ? "rust" : "ink") + ")";
+      chip.innerHTML = '<i style="background:' + colorVar + '"></i>' + d.name;
+      chip.addEventListener("click", function(){ select(key); });
+      chipRail.appendChild(chip);
+    });
+  }
+
+  function syncActive(){
+    Array.prototype.forEach.call(markersG.querySelectorAll(".marker"), function(m){
+      m.classList.toggle("active", m.getAttribute("data-key") === active);
+    });
+    Array.prototype.forEach.call(chipRail.querySelectorAll(".chip"), function(c){
+      c.classList.toggle("active", c.getAttribute("data-key") === active);
+    });
+  }
+
+  function renderBangkok(){
+    var d = DATA.bangkok;
+    var rows = d.baseline.map(function(r){
+      var cls = r.hi ? "hi" : (r.dim ? "dim" : "");
+      return "<tr class='"+cls+"'><td>"+r.m+"</td>" +
+        "<td>"+fmt(r.h1)+"</td><td>"+fmt(r.h3)+"</td><td>"+fmt(r.h6)+"</td><td>"+fmt(r.h12)+"</td><td>"+fmt(r.avg)+"</td>" +
+        "<td>"+fmt(r.rmse1,2)+"</td><td>"+fmt(r.rmse3,2)+"</td><td>"+fmt(r.rmse6,2)+"</td><td>"+fmt(r.rmse12,2)+"</td><td>"+fmt(r.rmseAvg,2)+"</td>" +
+        "<td class='"+(r.smapeBest?"best":"")+"'>"+pct(r.smape)+"</td></tr>";
+    }).join("");
+
+    panel.innerHTML =
+      "<div class='panel-head'><h2>"+d.name+"</h2><span class='badge "+d.badge+"'>"+d.badgeLabel+"</span></div>" +
+      "<p class='panel-note'>"+d.note+"</p>" +
+      "<p class='section-title'>R² and RMSE by horizon, all 11 methods</p>" +
+      "<div class='table-scroll'><table><thead><tr><th>Method</th>" +
+      "<th colspan='5' style='text-align:center'>R²</th><th colspan='5' style='text-align:center'>RMSE (µg/m³)</th><th>sMAPE</th></tr>" +
+      "<tr><th></th><th>h=1</th><th>h=3</th><th>h=6</th><th>h=12</th><th>Avg</th>" +
+      "<th>h=1</th><th>h=3</th><th>h=6</th><th>h=12</th><th>Avg</th><th>Avg</th></tr></thead>" +
+      "<tbody>"+rows+"</tbody></table></div>" +
+      "<p class='horizon-note'>"+d.callouts.join("</p><p class='horizon-note'>")+"</p>" +
+
+      "<p class='section-title'>Proposed vs. other methods, across horizons</p>" +
+      "<div class='chart-grid'>" +
+        "<div class='chart-card'><h4>R² by horizon (higher is better)</h4>" +
+          lineChartSvg(d.baseline, ["h1","h3","h6","h12"], ["h=1","h=3","h=6","h=12"], {
+            tickFmt: function(t){ return t.toFixed(1); },
+            tooltipFmt: function(v){ return v.toFixed(3); }
+          }) +
+        "</div>" +
+        "<div class='chart-card'><h4>RMSE by horizon, µg/m³ (lower is better)</h4>" +
+          lineChartSvg(d.baseline, ["rmse1","rmse3","rmse6","rmse12"], ["h=1","h=3","h=6","h=12"], {
+            zeroBase: true,
+            tickFmt: function(t){ return t.toFixed(0); },
+            tooltipFmt: function(v){ return v.toFixed(2); }
+          }) +
+        "</div>" +
+        "<div class='chart-card wide'><h4>sMAPE, average across all 12 horizons (lower is better)</h4>" +
+          barChartSvg(d.baseline) +
+        "</div>" +
+      "</div>" +
+      cmpLegendHtml();
+
+    wireComparisonLegend();
+  }
+
+  function renderCity(key){
+    var d = DATA[key];
+    var flagsHtml = d.elevationCorrected ? "<div class='flags'><span class='flag'>Elevation-corrected</span></div>" : "";
+    var mechLossNote = d.mechLoss ? " (the one case where this baseline wins on R²/RMSE)" : "";
+
+    panel.innerHTML =
+      "<div class='panel-head'><h2>"+d.name+"</h2><span class='badge "+d.badge+"'>"+d.badgeLabel+"</span></div>" +
+      "<p class='panel-note'>Applied directly from the Bangkok-trained model, with no retraining or fine-tuning for this city.</p>" +
+      flagsHtml +
+
+      "<p class='section-title'>At h=1 (one hour ahead)</p>" +
+      "<div class='stat-row'>" +
+        "<div class='stat'><div class='k'>Model R²</div><div class='v'>"+fmt(d.h1.modelR2)+"</div></div>" +
+        "<div class='stat'><div class='k'>Persistence R²</div><div class='v'>"+fmt(d.h1.persistR2)+"</div></div>" +
+        "<div class='stat'><div class='k'>Δ R² (model − persist.)</div><div class='v'>"+signed(d.h1.dR2,4)+"</div></div>" +
+      "</div>" +
+
+      "<p class='section-title'>Average across all 12 horizons, vs. naive baselines</p>" +
+      "<div class='table-scroll'><table><thead><tr><th></th><th>Model</th><th>Persistence</th><th>Seasonal naive</th></tr></thead><tbody>" +
+      "<tr><td>RMSE (µg/m³)</td><td class='best'>"+fmt(d.avg.modelRmse,2)+"</td><td>"+fmt(d.avg.persistRmse,2)+"</td><td>"+fmt(d.avg.seasonalRmse,2)+"</td></tr>" +
+      "<tr><td>sMAPE</td><td class='best'>"+pct(d.avg.modelSmape)+"</td><td>"+pct(d.avg.persistSmape)+"</td><td>"+pct(d.avg.seasonalSmape)+"</td></tr>" +
+      "</tbody></table></div>" +
+      "<p class='horizon-note'>"+d.loses+"</p>" +
+
+      "<p class='section-title'>Vs. the CNN-BiLSTM baseline (no weather forecast or penalty)"+mechLossNote+"</p>" +
+      "<div class='table-scroll'><table><thead><tr><th></th><th>Proposed</th><th>Baseline</th></tr></thead><tbody>" +
+      "<tr><td>R² (avg)</td><td class='"+(d.mech.proposedR2>=d.mech.baselineR2?"best":"")+"'>"+fmt(d.mech.proposedR2)+"</td><td>"+fmt(d.mech.baselineR2)+"</td></tr>" +
+      "<tr><td>RMSE (avg, µg/m³)</td><td class='"+(d.mech.proposedRmse<=d.mech.baselineRmse?"best":"")+"'>"+fmt(d.mech.proposedRmse,2)+"</td><td>"+fmt(d.mech.baselineRmse,2)+"</td></tr>" +
+      "<tr><td>sMAPE (avg)</td><td class='"+(d.mech.proposedSmape<=d.mech.baselineSmape?"best":"")+"'>"+pct(d.mech.proposedSmape)+"</td><td>"+pct(d.mech.baselineSmape)+"</td></tr>" +
+      "</tbody></table></div>" +
+      "<p class='horizon-note'>"+d.note+"</p>";
+  }
+
+  function select(key){
+    active = key;
+    syncActive();
+    if(key === "bangkok") renderBangkok(); else renderCity(key);
+  }
+
+  buildMarkers();
+  buildChips();
+  select("bangkok");
+})();
+</script>
