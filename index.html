@@ -61,7 +61,8 @@ h1{font-size:clamp(28px,4vw,40px); line-height:1.1}
   background:var(--card); border:1px solid var(--border); border-radius:18px;
   padding:18px; display:flex; flex-direction:column; gap:12px;
 }
-.map-card svg{width:100%; height:auto; display:block}
+#thailandMap{width:100%; height:auto; display:block}
+.legend svg{width:10px; height:10px; display:inline-block; flex:none}
 .map-land{fill:var(--map-land)}
 .marker{cursor:pointer}
 .marker circle.dot{stroke:var(--card); stroke-width:3; transition:r .15s ease}
@@ -137,6 +138,9 @@ td.best{font-weight:700}
 
 .chart-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
 @media (max-width:620px){ .chart-grid{grid-template-columns:1fr} }
+.chart-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+@media (max-width:620px){ .chart-grid.cols-3{grid-template-columns:1fr} }
+.chart-grid + .chart-grid{margin-top:16px}
 .chart-card{border:1px solid var(--border); border-radius:14px; padding:16px 16px 10px; min-width:0}
 .chart-card.wide{grid-column:1 / -1}
 .chart-card h4{font-size:13px; font-weight:600; color:var(--ink-soft); margin:0 0 10px}
@@ -149,6 +153,7 @@ td.best{font-weight:700}
 .cmp-bar{transition:opacity .15s ease}
 .cmp-bar-label{font-size:10.5px; fill:var(--ink-soft); font-variant-numeric:tabular-nums}
 .cmp-bar-label.best{fill:var(--green); font-weight:700}
+.cmp-bar-label.winner{fill:var(--ink); font-weight:700}
 .cmp-row-label{font-size:10.5px; fill:var(--ink-soft)}
 .cmp-row-label.hi{fill:var(--ink); font-weight:700}
 .cmp-row-label.hi2{fill:var(--ink); font-weight:600}
@@ -176,7 +181,7 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
   <div class="layout">
     <div class="map-col">
       <div class="map-card">
-        <svg viewBox="0 0 349 603" role="img" aria-label="Map of Thailand with Bangkok and nine other test cities">
+        <svg id="thailandMap" viewBox="0 0 349 603" role="img" aria-label="Map of Thailand with Bangkok and nine other test cities">
           <path class="map-land" d="M 115.0,20.0 L 113.0,24.0 L 109.0,25.0 L 100.0,22.0 L 99.0,23.0 L 104.0,28.0 L 104.0,30.0 L 100.0,34.0 L 86.0,33.0 L 84.0,36.0 L 83.0,47.0 L 77.0,45.0 L 75.0,47.0 L 70.0,47.0 L 67.0,50.0 L 54.0,50.0 L 48.0,45.0 L 48.0,51.0 L 41.0,55.0 L 42.0,59.0 L 37.0,65.0 L 41.0,69.0 L 41.0,73.0 L 36.0,75.0 L 35.0,79.0 L 37.0,82.0 L 38.0,92.0 L 36.0,94.0 L 31.0,94.0 L 28.0,97.0 L 25.0,97.0 L 20.0,93.0 L 28.0,105.0 L 30.0,103.0 L 33.0,104.0 L 36.0,114.0 L 35.0,123.0 L 38.0,125.0 L 39.0,129.0 L 55.0,146.0 L 57.0,152.0 L 61.0,152.0 L 64.0,155.0 L 67.0,167.0 L 65.0,168.0 L 71.0,175.0 L 71.0,183.0 L 77.0,177.0 L 81.0,178.0 L 81.0,183.0 L 78.0,188.0 L 72.0,188.0 L 68.0,193.0 L 68.0,216.0 L 64.0,216.0 L 61.0,221.0 L 56.0,220.0 L 56.0,222.0 L 53.0,224.0 L 53.0,229.0 L 55.0,230.0 L 55.0,235.0 L 59.0,243.0 L 67.0,252.0 L 69.0,260.0 L 76.0,262.0 L 81.0,266.0 L 84.0,273.0 L 89.0,279.0 L 91.0,297.0 L 87.0,303.0 L 87.0,306.0 L 92.0,310.0 L 92.0,319.0 L 98.0,325.0 L 99.0,334.0 L 104.0,340.0 L 103.0,344.0 L 106.0,346.0 L 104.0,351.0 L 107.0,352.0 L 105.0,359.0 L 99.0,360.0 L 100.0,365.0 L 95.0,370.0 L 93.0,378.0 L 87.0,385.0 L 83.0,386.0 L 83.0,389.0 L 81.0,391.0 L 77.0,392.0 L 74.0,396.0 L 77.0,403.0 L 68.0,421.0 L 65.0,424.0 L 63.0,439.0 L 61.0,444.0 L 58.0,446.0 L 57.0,459.0 L 53.0,468.0 L 53.0,479.0 L 57.0,485.0 L 54.0,505.0 L 56.0,505.0 L 56.0,502.0 L 58.0,500.0 L 57.0,496.0 L 61.0,493.0 L 68.0,494.0 L 70.0,490.0 L 76.0,493.0 L 82.0,493.0 L 82.0,511.0 L 84.0,512.0 L 88.0,507.0 L 91.0,507.0 L 93.0,509.0 L 93.0,515.0 L 97.0,520.0 L 97.0,524.0 L 103.0,524.0 L 108.0,529.0 L 110.0,540.0 L 120.0,547.0 L 122.0,554.0 L 126.0,550.0 L 125.0,544.0 L 128.0,543.0 L 131.0,545.0 L 132.0,551.0 L 148.0,552.0 L 151.0,556.0 L 152.0,562.0 L 156.0,560.0 L 160.0,561.0 L 159.0,565.0 L 161.0,566.0 L 161.0,573.0 L 156.0,574.0 L 155.0,578.0 L 162.0,583.0 L 166.0,581.0 L 167.0,576.0 L 172.0,576.0 L 175.0,574.0 L 179.0,574.0 L 182.0,578.0 L 187.0,579.0 L 191.0,574.0 L 190.0,571.0 L 196.0,566.0 L 196.0,561.0 L 189.0,557.0 L 181.0,549.0 L 180.0,543.0 L 175.0,538.0 L 171.0,538.0 L 166.0,535.0 L 164.0,539.0 L 155.0,539.0 L 151.0,534.0 L 147.0,535.0 L 141.0,529.0 L 141.0,526.0 L 136.0,523.0 L 134.0,514.0 L 129.0,514.0 L 128.0,508.0 L 126.0,506.0 L 127.0,502.0 L 133.0,497.0 L 132.0,493.0 L 129.0,491.0 L 115.0,491.0 L 113.0,489.0 L 113.0,484.0 L 109.0,481.0 L 110.0,469.0 L 112.0,467.0 L 114.0,458.0 L 113.0,454.0 L 109.0,452.0 L 110.0,446.0 L 101.0,448.0 L 100.0,451.0 L 91.0,450.0 L 90.0,445.0 L 93.0,443.0 L 93.0,441.0 L 87.0,435.0 L 86.0,421.0 L 89.0,418.0 L 92.0,418.0 L 96.0,422.0 L 98.0,422.0 L 96.0,413.0 L 97.0,407.0 L 93.0,405.0 L 94.0,398.0 L 98.0,395.0 L 99.0,389.0 L 102.0,387.0 L 101.0,380.0 L 108.0,360.0 L 114.0,353.0 L 113.0,349.0 L 121.0,339.0 L 121.0,332.0 L 117.0,328.0 L 119.0,317.0 L 123.0,308.0 L 120.0,303.0 L 120.0,295.0 L 122.0,292.0 L 129.0,289.0 L 136.0,290.0 L 145.0,286.0 L 153.0,289.0 L 155.0,292.0 L 155.0,305.0 L 152.0,308.0 L 148.0,309.0 L 148.0,312.0 L 156.0,323.0 L 174.0,323.0 L 180.0,321.0 L 188.0,321.0 L 191.0,323.0 L 191.0,326.0 L 197.0,332.0 L 205.0,336.0 L 207.0,340.0 L 213.0,339.0 L 218.0,342.0 L 221.0,350.0 L 228.0,358.0 L 220.0,339.0 L 223.0,329.0 L 219.0,327.0 L 213.0,320.0 L 214.0,307.0 L 209.0,303.0 L 207.0,299.0 L 207.0,287.0 L 215.0,286.0 L 216.0,281.0 L 222.0,277.0 L 222.0,273.0 L 229.0,268.0 L 229.0,262.0 L 237.0,257.0 L 245.0,257.0 L 253.0,253.0 L 261.0,257.0 L 278.0,255.0 L 292.0,256.0 L 294.0,254.0 L 302.0,254.0 L 305.0,259.0 L 310.0,261.0 L 313.0,254.0 L 322.0,254.0 L 326.0,248.0 L 324.0,240.0 L 328.0,232.0 L 323.0,227.0 L 323.0,224.0 L 326.0,221.0 L 324.0,217.0 L 327.0,215.0 L 329.0,207.0 L 327.0,204.0 L 320.0,202.0 L 318.0,197.0 L 320.0,193.0 L 307.0,190.0 L 303.0,180.0 L 296.0,174.0 L 295.0,153.0 L 298.0,147.0 L 298.0,140.0 L 277.0,120.0 L 275.0,114.0 L 267.0,103.0 L 263.0,104.0 L 243.0,98.0 L 241.0,106.0 L 237.0,109.0 L 234.0,115.0 L 226.0,117.0 L 219.0,123.0 L 213.0,122.0 L 207.0,114.0 L 197.0,107.0 L 191.0,114.0 L 186.0,114.0 L 185.0,118.0 L 183.0,120.0 L 180.0,120.0 L 177.0,126.0 L 173.0,126.0 L 164.0,135.0 L 157.0,133.0 L 157.0,124.0 L 165.0,113.0 L 165.0,107.0 L 162.0,105.0 L 160.0,98.0 L 167.0,90.0 L 167.0,78.0 L 171.0,75.0 L 167.0,71.0 L 165.0,59.0 L 168.0,56.0 L 166.0,54.0 L 161.0,55.0 L 156.0,53.0 L 150.0,58.0 L 144.0,56.0 L 140.0,57.0 L 138.0,55.0 L 136.0,47.0 L 142.0,35.0 L 142.0,32.0 L 139.0,31.0 L 132.0,22.0 L 130.0,22.0 L 128.0,26.0 L 124.0,27.0 L 123.0,21.0 Z"/>
 
           <g id="markers" font-family="'IBM Plex Sans',Arial,sans-serif"></g>
@@ -328,6 +333,10 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
   function fmt(n, d){ if(n===undefined||n===null) return "—"; d = d===undefined?3:d; return Number(n).toFixed(d); }
   function pct(n){ return fmt(n,2) + "%"; }
   function signed(n, d){ var v = fmt(Math.abs(n), d===undefined?3:d); return (n>=0?"+":"−") + v; }
+  // Index (0/1/2) of the lowest of three values — used so "best" bolding in
+  // the naive-baseline tables reflects which method actually won, rather
+  // than always pointing at the model.
+  function minIdx3(a,b,c){ return (a<=b && a<=c) ? 0 : (b<=c ? 1 : 2); }
 
   // ---- Proposed-vs-others comparison charts (Bangkok panel only) --------
   var CMP_GROUPS = {
@@ -430,6 +439,48 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
     }).join("");
 
     var axisLine = "<line class='chart-axis-line' x1='"+L+"' x2='"+L+"' y1='"+T+"' y2='"+(H-B)+"'/>";
+
+    return "<svg viewBox='0 0 "+W+" "+H+"' style='aspect-ratio:"+W+"/"+H+"' preserveAspectRatio='xMidYMid meet'>"+grid+axisLine+bars+"</svg>";
+  }
+
+  // Small vertical bar chart for the nine generalization-city panels, where
+  // only a single averaged value per method is available (no per-horizon
+  // series like Bangkok's 11-method comparison).
+  function miniBarChart(items, opts){
+    opts = opts || {};
+    var n = items.length;
+    var W = opts.width || (70 * n + 50);
+    var H = 172, L = 36, R = 14, T = 18, B = 34;
+    var plotW = W - L - R, plotH = H - T - B;
+    var vals = items.map(function(it){ return it.value; });
+    var axis = niceAxis(0, Math.max.apply(null, vals), true);
+    function yAt(v){ return T + plotH - (v - axis.min) / (axis.max - axis.min) * plotH; }
+    var slot = plotW / n;
+    var barW = Math.min(slot * 0.5, 46);
+
+    var winnerIdx = 0;
+    for(var i=1;i<n;i++){
+      if(opts.higherBetter ? items[i].value > items[winnerIdx].value : items[i].value < items[winnerIdx].value) winnerIdx = i;
+    }
+
+    var grid = axis.ticks.map(function(t){
+      return "<line class='chart-grid-line' x1='"+L+"' x2='"+(W-R)+"' y1='"+yAt(t)+"' y2='"+yAt(t)+"'/>" +
+        "<text class='chart-tick' x='"+(L-6)+"' y='"+(yAt(t)+3)+"' text-anchor='end'>"+(opts.tickFmt ? opts.tickFmt(t) : t)+"</text>";
+    }).join("");
+
+    var axisLine = "<line class='chart-axis-line' x1='"+L+"' x2='"+(W-R)+"' y1='"+(H-B)+"' y2='"+(H-B)+"'/>";
+
+    var bars = items.map(function(it, i){
+      var cx = L + slot * i + slot / 2;
+      var x = cx - barW / 2;
+      var y = yAt(it.value);
+      var h = (H - B) - y;
+      var valTxt = opts.valFmt ? opts.valFmt(it.value) : it.value;
+      var labelCls = "cmp-bar-label" + (i === winnerIdx ? " winner" : "");
+      return "<rect class='cmp-bar' x='"+x+"' y='"+y+"' width='"+barW+"' height='"+Math.max(h,1)+"' rx='3' fill='"+it.color+"'><title>"+it.label+": "+valTxt+(i===winnerIdx?" (best)":"")+"</title></rect>" +
+        "<text x='"+cx+"' y='"+(y-6)+"' text-anchor='middle' class='"+labelCls+"'>"+valTxt+"</text>" +
+        "<text x='"+cx+"' y='"+(H-B+15)+"' text-anchor='middle' class='chart-tick'>"+it.label+"</text>";
+    }).join("");
 
     return "<svg viewBox='0 0 "+W+" "+H+"' style='aspect-ratio:"+W+"/"+H+"' preserveAspectRatio='xMidYMid meet'>"+grid+axisLine+bars+"</svg>";
   }
@@ -622,9 +673,30 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
 
       "<p class='section-title'>Average across all 12 horizons, vs. naive baselines</p>" +
       "<div class='table-scroll'><table><thead><tr><th></th><th>Model</th><th>Persistence</th><th>Seasonal naive</th></tr></thead><tbody>" +
-      "<tr><td>RMSE (µg/m³)</td><td class='best'>"+fmt(d.avg.modelRmse,2)+"</td><td>"+fmt(d.avg.persistRmse,2)+"</td><td>"+fmt(d.avg.seasonalRmse,2)+"</td></tr>" +
-      "<tr><td>sMAPE</td><td class='best'>"+pct(d.avg.modelSmape)+"</td><td>"+pct(d.avg.persistSmape)+"</td><td>"+pct(d.avg.seasonalSmape)+"</td></tr>" +
+      (function(){
+        var rmseWin = minIdx3(d.avg.modelRmse, d.avg.persistRmse, d.avg.seasonalRmse);
+        var smapeWin = minIdx3(d.avg.modelSmape, d.avg.persistSmape, d.avg.seasonalSmape);
+        function c(win,i){ return win===i ? "best" : ""; }
+        return "<tr><td>RMSE (µg/m³)</td><td class='"+c(rmseWin,0)+"'>"+fmt(d.avg.modelRmse,2)+"</td><td class='"+c(rmseWin,1)+"'>"+fmt(d.avg.persistRmse,2)+"</td><td class='"+c(rmseWin,2)+"'>"+fmt(d.avg.seasonalRmse,2)+"</td></tr>" +
+        "<tr><td>sMAPE</td><td class='"+c(smapeWin,0)+"'>"+pct(d.avg.modelSmape)+"</td><td class='"+c(smapeWin,1)+"'>"+pct(d.avg.persistSmape)+"</td><td class='"+c(smapeWin,2)+"'>"+pct(d.avg.seasonalSmape)+"</td></tr>";
+      })() +
       "</tbody></table></div>" +
+      "<div class='chart-grid'>" +
+        "<div class='chart-card'><h4>Average RMSE, µg/m³ (lower is better)</h4>" +
+          miniBarChart([
+            {label:"Model", value:d.avg.modelRmse, color:"var(--green)"},
+            {label:"Persistence", value:d.avg.persistRmse, color:"var(--muted)"},
+            {label:"Seasonal naive", value:d.avg.seasonalRmse, color:"var(--muted)"}
+          ], {tickFmt:function(t){return t.toFixed(0);}, valFmt:function(v){return v.toFixed(2);}}) +
+        "</div>" +
+        "<div class='chart-card'><h4>Average sMAPE (lower is better)</h4>" +
+          miniBarChart([
+            {label:"Model", value:d.avg.modelSmape, color:"var(--green)"},
+            {label:"Persistence", value:d.avg.persistSmape, color:"var(--muted)"},
+            {label:"Seasonal naive", value:d.avg.seasonalSmape, color:"var(--muted)"}
+          ], {tickFmt:function(t){return t.toFixed(0)+"%";}, valFmt:function(v){return pct(v);}}) +
+        "</div>" +
+      "</div>" +
       "<p class='horizon-note'>"+d.loses+"</p>" +
 
       "<p class='section-title'>Vs. the CNN-BiLSTM baseline (no weather forecast or penalty)"+mechLossNote+"</p>" +
@@ -633,6 +705,26 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
       "<tr><td>RMSE (avg, µg/m³)</td><td class='"+(d.mech.proposedRmse<=d.mech.baselineRmse?"best":"")+"'>"+fmt(d.mech.proposedRmse,2)+"</td><td>"+fmt(d.mech.baselineRmse,2)+"</td></tr>" +
       "<tr><td>sMAPE (avg)</td><td class='"+(d.mech.proposedSmape<=d.mech.baselineSmape?"best":"")+"'>"+pct(d.mech.proposedSmape)+"</td><td>"+pct(d.mech.baselineSmape)+"</td></tr>" +
       "</tbody></table></div>" +
+      "<div class='chart-grid cols-3'>" +
+        "<div class='chart-card'><h4>R² (higher is better)</h4>" +
+          miniBarChart([
+            {label:"Proposed", value:d.mech.proposedR2, color:"var(--green)"},
+            {label:"Baseline", value:d.mech.baselineR2, color:"var(--rust)"}
+          ], {higherBetter:true, width:170, tickFmt:function(t){return t.toFixed(1);}, valFmt:function(v){return fmt(v);}}) +
+        "</div>" +
+        "<div class='chart-card'><h4>RMSE, µg/m³ (lower is better)</h4>" +
+          miniBarChart([
+            {label:"Proposed", value:d.mech.proposedRmse, color:"var(--green)"},
+            {label:"Baseline", value:d.mech.baselineRmse, color:"var(--rust)"}
+          ], {width:170, tickFmt:function(t){return t.toFixed(0);}, valFmt:function(v){return v.toFixed(2);}}) +
+        "</div>" +
+        "<div class='chart-card'><h4>sMAPE (lower is better)</h4>" +
+          miniBarChart([
+            {label:"Proposed", value:d.mech.proposedSmape, color:"var(--green)"},
+            {label:"Baseline", value:d.mech.baselineSmape, color:"var(--rust)"}
+          ], {width:170, tickFmt:function(t){return t.toFixed(0)+"%";}, valFmt:function(v){return pct(v);}}) +
+        "</div>" +
+      "</div>" +
       "<p class='horizon-note'>"+d.note+"</p>";
   }
 
