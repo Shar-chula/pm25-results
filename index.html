@@ -72,6 +72,10 @@ h1{font-size:clamp(28px,4vw,40px); line-height:1.1}
 .marker circle.hit{fill:transparent}
 .bangkok-mark{cursor:pointer}
 .bangkok-mark path{stroke:var(--card); stroke-width:2.5}
+.marker-label{opacity:0; pointer-events:none; transition:opacity .12s ease}
+.marker:hover .marker-label, .marker:focus-visible .marker-label, .bangkok-mark:hover .marker-label, .bangkok-mark:focus-visible .marker-label{opacity:1}
+.marker-label rect{fill:var(--card); stroke:var(--border); stroke-width:1}
+.marker-label text{fill:var(--ink); font-size:11px; font-weight:600}
 
 .legend{display:flex; flex-wrap:wrap; gap:10px 16px; font-size:12.5px; color:var(--ink-soft)}
 .legend span{display:inline-flex; align-items:center; gap:6px}
@@ -150,6 +154,15 @@ td.best{font-weight:700}
 .chart-tick{font-size:10px; fill:var(--muted)}
 .cmp-line{fill:none; stroke-linecap:round; stroke-linejoin:round; transition:opacity .15s ease, stroke-width .15s ease}
 .cmp-dot{transition:opacity .15s ease}
+.series{transition:opacity .12s ease}
+.series.hover-dim{opacity:.16 !important}
+.series.hover-focus{opacity:1 !important}
+.hover-capture{fill:transparent}
+.hover-crosshair line{stroke:var(--border); stroke-width:1}
+.hover-point{transition:opacity .08s ease}
+.hover-tip rect{fill:var(--card); stroke:var(--border); stroke-width:1}
+.hover-tip .tip-label{font-size:9.5px; font-weight:600; fill:var(--ink-soft); text-transform:uppercase; letter-spacing:.02em}
+.hover-tip .tip-value{font-size:13px; font-weight:700; fill:var(--ink)}
 .cmp-bar{transition:opacity .15s ease}
 .cmp-bar-label{font-size:10.5px; fill:var(--ink-soft); font-variant-numeric:tabular-nums}
 .cmp-bar-label.best{fill:var(--green); font-weight:700}
@@ -230,17 +243,28 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
       name: "Bangkok", role: "home", badge: "home", badgeLabel: "Training city",
       note: "The model is trained here and compared against ten baseline methods across all twelve forecast horizons. This is the only city with a full ten-way comparison.",
       baseline: [
-        {m:"Proposed (tuned)",        h1:.937, h3:.823, h6:.707, h12:.623, avg:.727, rmse1:3.570, rmse3:6.003, rmse6:7.768, rmse12:8.904, rmseAvg:7.339, smape:29.295, hi:true},
-        {m:"CNN-BiLSTM (no weather forecast/penalty)", h1:.906, h3:.791, h6:.663, h12:.626, avg:.703, rmse1:4.361, rmse3:6.523, rmse6:8.330, rmse12:8.869, rmseAvg:7.711, smape:30.911},
-        {m:"Ridge (last-step features)", h1:.902, h3:.787, h6:.660, h12:.592, avg:.693, rmse1:4.453, rmse3:6.585, rmse6:8.367, rmse12:9.263, rmseAvg:7.830, smape:28.433},
-        {m:"XGBoost (last-step features)", h1:.898, h3:.790, h6:.668, h12:.587, avg:.691, rmse1:4.543, rmse3:6.538, rmse6:8.268, rmse12:9.320, rmseAvg:7.870, smape:28.386, smapeBest:true},
-        {m:"GRU", h1:.864, h3:.765, h6:.669, h12:.582, avg:.690, rmse1:5.246, rmse3:6.917, rmse6:8.256, rmse12:9.376, rmseAvg:7.919, smape:29.210},
-        {m:"LSTM", h1:.856, h3:.756, h6:.663, h12:.582, avg:.686, rmse1:5.398, rmse3:7.048, rmse6:8.330, rmse12:9.376, rmseAvg:7.979, smape:31.184},
-        {m:"BiLSTM", h1:.832, h3:.747, h6:.663, h12:.598, avg:.680, rmse1:5.831, rmse3:7.177, rmse6:8.491, rmse12:9.195, rmseAvg:8.070, smape:30.991},
-        {m:"CNN-LSTM", h1:.828, h3:.755, h6:.662, h12:.586, avg:.676, rmse1:5.900, rmse3:7.062, rmse6:8.343, rmse12:9.331, rmseAvg:8.121, smape:30.345},
-        {m:"Persistence", h1:.932, h3:.767, h6:.512, h12:.287, avg:.534, rmse1:3.709, rmse3:6.887, rmse6:10.024, rmse12:12.245, rmseAvg:9.443, smape:34.899},
-        {m:"Seasonal naive (24h)", h1:.507, h3:.507, h6:.511, h12:.524, avg:.513, rmse1:9.988, rmse3:10.018, rmse6:10.035, rmse12:10.005, rmseAvg:10.020, smape:39.074},
-        {m:"Moving average (k=6)", h1:.793, h3:.634, h6:.455, h12:.374, avg:.496, rmse1:6.47, rmse3:8.63, rmse6:10.59, rmse12:11.48, rmseAvg:10.082, smape:37.378, dim:true}
+        {m:"Proposed (tuned)",        h1:.937, h3:.823, h6:.707, h12:.623, avg:.727, rmse1:3.570, rmse3:6.003, rmse6:7.768, rmse12:8.904, rmseAvg:7.339, smape:29.295, hi:true,
+          r2full:[.937,.879,.823,.785,.73,.707,.678,.673,.64,.626,.623,.623], rmsefull:[3.570,4.955,6.003,6.629,7.446,7.768,8.156,8.241,8.663,8.841,8.888,8.904]},
+        {m:"CNN-BiLSTM (no weather forecast/penalty)", h1:.906, h3:.791, h6:.663, h12:.626, avg:.703, rmse1:4.361, rmse3:6.523, rmse6:8.330, rmse12:8.869, rmseAvg:7.711, smape:30.911,
+          r2full:[.906,.852,.791,.738,.693,.663,.644,.633,.629,.629,.630,.626], rmsefull:[4.361,5.480,6.523,7.318,7.939,8.330,8.576,8.731,8.794,8.805,8.805,8.869]},
+        {m:"Ridge (last-step features)", h1:.902, h3:.787, h6:.660, h12:.592, avg:.693, rmse1:4.453, rmse3:6.585, rmse6:8.367, rmse12:9.263, rmseAvg:7.830, smape:28.433,
+          r2full:[.902,.845,.787,.734,.695,.660,.649,.632,.620,.606,.599,.592], rmsefull:[4.453,5.608,6.585,7.373,7.913,8.367,8.515,8.743,8.900,9.074,9.167,9.263]},
+        {m:"XGBoost (last-step features)", h1:.898, h3:.790, h6:.668, h12:.587, avg:.691, rmse1:4.543, rmse3:6.538, rmse6:8.268, rmse12:9.320, rmseAvg:7.870, smape:28.386, smapeBest:true,
+          r2full:[.898,.840,.790,.729,.701,.668,.644,.626,.609,.602,.591,.587], rmsefull:[4.543,5.698,6.538,7.442,7.835,8.268,8.576,8.814,9.028,9.120,9.258,9.320]},
+        {m:"GRU", h1:.864, h3:.765, h6:.669, h12:.582, avg:.690, rmse1:5.246, rmse3:6.917, rmse6:8.256, rmse12:9.376, rmseAvg:7.919, smape:29.210,
+          r2full:[.864,.827,.765,.731,.697,.669,.636,.653,.619,.623,.608,.582], rmsefull:[5.246,5.925,6.917,7.415,7.887,8.256,8.672,8.490,8.912,8.876,9.063,9.376]},
+        {m:"LSTM", h1:.856, h3:.756, h6:.663, h12:.582, avg:.686, rmse1:5.398, rmse3:7.048, rmse6:8.330, rmse12:9.376, rmseAvg:7.979, smape:31.184,
+          r2full:[.856,.81,.756,.714,.696,.663,.645,.639,.645,.623,.601,.582], rmsefull:[5.398,6.209,7.048,7.645,7.900,8.330,8.564,8.659,8.602,8.876,9.144,9.376]},
+        {m:"BiLSTM", h1:.832, h3:.747, h6:.663, h12:.598, avg:.680, rmse1:5.831, rmse3:7.177, rmse6:8.491, rmse12:9.195, rmseAvg:8.070, smape:30.991,
+          r2full:[.832,.791,.747,.722,.681,.663,.651,.636,.628,.615,.596,.598], rmsefull:[5.831,6.512,7.177,7.538,8.093,8.330,8.491,8.695,8.806,8.970,9.201,9.195]},
+        {m:"CNN-LSTM", h1:.828, h3:.755, h6:.662, h12:.586, avg:.676, rmse1:5.900, rmse3:7.062, rmse6:8.343, rmse12:9.331, rmseAvg:8.121, smape:30.345,
+          r2full:[.828,.793,.755,.723,.684,.662,.645,.616,.609,.613,.592,.586], rmsefull:[5.900,6.481,7.062,7.524,8.055,8.343,8.564,8.931,9.028,8.993,9.247,9.331]},
+        {m:"Persistence", h1:.932, h3:.767, h6:.512, h12:.287, avg:.534, rmse1:3.709, rmse3:6.887, rmse6:10.024, rmse12:12.245, rmseAvg:9.443, smape:34.899,
+          r2full:[.932,.857,.767,.677,.59,.512,.444,.389,.347,.315,.296,.287], rmsefull:[3.709,5.386,6.887,8.125,9.175,10.024,10.717,11.265,11.667,11.964,12.146,12.245]},
+        {m:"Seasonal naive (24h)", h1:.507, h3:.507, h6:.511, h12:.524, avg:.513, rmse1:9.988, rmse3:10.018, rmse6:10.035, rmse12:10.005, rmseAvg:10.020, smape:39.074,
+          r2full:[.507,.507,.507,.508,.509,.511,.512,.514,.518,.521,.522,.524], rmsefull:[9.988,10.001,10.018,10.028,10.041,10.035,10.041,10.047,10.024,10.005,10.008,10.005]},
+        {m:"Moving average (k=6)", h1:.793, h3:.634, h6:.455, h12:.374, avg:.496, rmse1:6.47, rmse3:8.63, rmse6:10.59, rmse12:11.48, rmseAvg:10.082, smape:37.378, dim:true,
+          r2full:[.793,.711,.634,.564,.504,.455,.418,.392,.376,.367,.367,.374], rmsefull:[6.47,7.65,8.63,9.44,10.09,10.60,10.97,11.24,11.41,11.50,11.52,11.48]}
       ],
       callouts: [
         "The proposed model leads on R²/RMSE every horizon except h=9 (LSTM) and h=10–12, where the no-weather CNN-BiLSTM baseline edges ahead — the combined weather mechanism's advantage is concentrated in the short-to-medium horizons.",
@@ -251,80 +275,114 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
     chiangmai: {
       name: "Chiang Mai", role:"city", badge:"win", badgeLabel:"Beats both baselines",
       elevationCorrected: true,
-      h1: {modelR2:.9303, persistR2:.9349, dR2:-.0046, modelRmse:3.304, persistRmse:3.193, dRmse:-.111},
-      avg: {modelRmse:6.223, persistRmse:6.665, seasonalRmse:8.150, modelSmape:22.43, persistSmape:23.70, seasonalSmape:31.11},
-      mech: {proposedR2:.7451, baselineR2:.6789, proposedRmse:6.223, baselineRmse:7.049, proposedSmape:22.43, baselineSmape:25.75},
       loses: "Loses to persistence only at h=1–2 (a strong, stable local series at the very start of the window). Never loses to seasonal naive.",
       note: "Elevation correction moved Chiang Mai's average R² from 0.430 (below persistence) to 0.745 (above it) — without it, surface pressure sits about 12 training standard deviations out of distribution."
     },
     chiangrai: {
       name: "Chiang Rai", role:"city", badge:"win", badgeLabel:"Beats both baselines",
       elevationCorrected: true,
-      h1: {modelR2:.9550, persistR2:.9550, dR2:.0001, modelRmse:6.968, persistRmse:6.974, dRmse:.006},
-      avg: {modelRmse:14.038, persistRmse:15.187, seasonalRmse:16.637, modelSmape:40.38, persistSmape:36.31, seasonalSmape:45.32},
-      mech: {proposedR2:.8012, baselineR2:.7419, proposedRmse:14.038, baselineRmse:16.463, proposedSmape:40.38, baselineSmape:42.95},
       loses: "Never loses to persistence. Loses to seasonal naive only at h=9–12, the same long-horizon erosion seen in Bangkok itself.",
       note: "Elevation-corrected: surface pressure shifted to match Bangkok's training mean before this city was tested."
     },
     nan: {
       name: "Nan", role:"city", badge:"mixed", badgeLabel:"Narrow exception",
       elevationCorrected: true,
-      h1: {modelR2:.9382, persistR2:.9363, dR2:.0019, modelRmse:7.820, persistRmse:7.941, dRmse:.121},
-      avg: {modelRmse:17.060, persistRmse:19.355, seasonalRmse:17.398, modelSmape:40.86, persistSmape:42.78, seasonalSmape:47.36},
-      mech: {proposedR2:.6885, baselineR2:.5992, proposedRmse:17.060, baselineRmse:19.850, proposedSmape:40.86, baselineSmape:43.03},
-      loses: "Never loses to persistence. Loses to seasonal naive from h=6 onward — on RMSE and sMAPE the model still wins on average, but average R² (0.6885) lands just under seasonal naive's (0.6930).",
+      loses: "Never loses to persistence. Loses to seasonal naive from h=6 onward — on RMSE and sMAPE the model still wins on average, but average R² (0.688) lands just under seasonal naive's (0.693).",
       note: "Elevation-corrected: surface pressure shifted to match Bangkok's training mean before this city was tested."
     },
     khonkaen: {
       name: "Khon Kaen", role:"city", badge:"win", badgeLabel:"Beats both baselines",
       elevationCorrected: true,
-      h1: {modelR2:.9173, persistR2:.9166, dR2:.0007, modelRmse:5.404, persistRmse:5.428, dRmse:.024},
-      avg: {modelRmse:11.648, persistRmse:14.919, seasonalRmse:13.327, modelSmape:31.45, persistSmape:39.65, seasonalSmape:34.25},
-      mech: {proposedR2:.6032, baselineR2:.5271, proposedRmse:11.648, baselineRmse:12.949, proposedSmape:31.45, baselineSmape:33.83},
       loses: "Never loses to persistence. Loses to seasonal naive at h=8–10 and h=12.",
-      note: "Elevation-corrected: surface pressure shifted to match Bangkok's training mean before this city was tested. Persistence itself is weak here (R² ≈ 0.334), which is why the model's gain is one of the largest of the nine cities."
+      note: "Elevation-corrected: surface pressure shifted to match Bangkok's training mean before this city was tested. Persistence itself collapses at longer horizons here (R² falls to about 0.04 by h=12), which is why the model's gain is one of the largest of the nine cities."
     },
     kanchanaburi: {
       name: "Kanchanaburi", role:"city", badge:"win", badgeLabel:"Beats both baselines",
-      h1: {modelR2:.9104, persistR2:.9074, dR2:.0030, modelRmse:6.994, persistRmse:7.110, dRmse:.116},
-      avg: {modelRmse:13.307, persistRmse:15.433, seasonalRmse:14.434, modelSmape:43.45, persistSmape:45.42, seasonalSmape:50.50},
-      mech: {proposedR2:.6612, baselineR2:.6281, proposedRmse:13.307, baselineRmse:14.201, proposedSmape:43.45, baselineSmape:45.51},
       loses: "Never loses to persistence. Loses to seasonal naive from h=7 onward.",
       note: "Close enough to sea level that no elevation/pressure correction was needed."
     },
     pattaya: {
       name: "Pattaya", role:"city", badge:"win", badgeLabel:"Beats both baselines",
-      h1: {modelR2:.7552, persistR2:.7537, dR2:.0014, modelRmse:8.009, persistRmse:8.032, dRmse:.023},
-      avg: {modelRmse:10.623, persistRmse:11.512, seasonalRmse:12.601, modelSmape:44.84, persistSmape:44.58, seasonalSmape:50.62},
-      mech: {proposedR2:.5652, baselineR2:.6151, proposedRmse:10.623, baselineRmse:10.021, proposedSmape:44.84, baselineSmape:48.17},
       loses: "The only city where the model beats both naive baselines at every single horizon, with no exceptions.",
-      note: "Also the one city where the no-weather CNN-BiLSTM baseline beats the full proposed model on R²/RMSE — the weather mechanism still wins on sMAPE here, just not on R²/RMSE.",
-      mechLoss: true
+      note: "Also the one city where the no-weather CNN-BiLSTM baseline beats the full proposed model on R²/RMSE — the weather mechanism still wins on sMAPE here, just not on R²/RMSE."
     },
     siracha: {
       name: "Si Racha", role:"city", badge:"win", badgeLabel:"Beats both baselines",
-      h1: {modelR2:.9597, persistR2:.9641, dR2:-.0044, modelRmse:3.249, persistRmse:3.066, dRmse:-.183},
-      avg: {modelRmse:6.961, persistRmse:7.207, seasonalRmse:8.872, modelSmape:69.92, persistSmape:66.64, seasonalSmape:73.45},
-      mech: {proposedR2:.8051, baselineR2:.7480, proposedRmse:6.961, baselineRmse:8.069, proposedSmape:69.92, baselineSmape:78.15},
       loses: "Loses to persistence at h=1 and briefly at h=6. Never loses to seasonal naive.",
       note: "Close enough to sea level that no elevation/pressure correction was needed. Highest sMAPE of any city tested, on every method — a comparatively hard series to forecast in relative terms."
     },
     hatyai: {
       name: "Hat Yai", role:"city", badge:"win", badgeLabel:"Beats both baselines",
-      h1: {modelR2:.8343, persistR2:.8341, dR2:-.0002, modelRmse:4.112, persistRmse:4.110, dRmse:-.002},
-      avg: {modelRmse:6.952, persistRmse:7.997, seasonalRmse:8.760, modelSmape:36.79, persistSmape:41.65, seasonalSmape:43.45},
-      mech: {proposedR2:.5112, baselineR2:.4887, proposedRmse:6.952, baselineRmse:7.177, proposedSmape:36.79, baselineSmape:39.48},
       loses: "Loses to persistence only at h=1, essentially a rounding-level tie. Never loses to seasonal naive.",
-      note: "Close enough to sea level that no elevation/pressure correction was needed. Persistence itself is weak here (R² ≈ 0.343), giving the model plenty of room to add value."
+      note: "Close enough to sea level that no elevation/pressure correction was needed. Persistence itself gets weak at longer horizons here, giving the model room to add value."
     },
     phuket: {
       name: "Phuket", role:"city", badge:"loss", badgeLabel:"Loses on average",
-      h1: {modelR2:.9771, persistR2:.9559, dR2:.0213, modelRmse:1.336, persistRmse:1.855, dRmse:.520},
-      avg: {modelRmse:4.236, persistRmse:3.240, seasonalRmse:5.158, modelSmape:41.44, persistSmape:32.43, seasonalSmape:44.68},
-      mech: {proposedR2:.7461, baselineR2:.6297, proposedRmse:4.236, baselineRmse:5.196, proposedSmape:41.44, baselineSmape:51.80},
-      loses: "The only total loss anywhere in this thesis: persistence beats the model on every metric, at every one of the 12 forecast horizons.",
-      note: "Phuket's own PM2.5 series is unusually smooth and low-variability — exactly the condition where persistence is hardest to beat. Even so, the weather-informed mechanism specifically still wins here by the largest margin of any city (vs. the no-weather baseline).",
-      phuketCallout: true
+      loses: "The only total loss anywhere in this thesis: persistence beats the model on every metric, at every one of the 12 forecast horizons — including h=1.",
+      note: "Phuket's own PM2.5 series is unusually smooth and low-variability — exactly the condition where persistence is hardest to beat. Even so, the weather-informed mechanism specifically still wins here by the largest margin of any city (vs. the no-weather baseline)."
+    }
+  };
+
+  // Full per-horizon series (h=1..h=12) for the nine generalization cities,
+  // supplied directly by the user from their raw results output. This
+  // supersedes the single h=1/average figures originally transcribed from
+  // the thesis's Chapter 4 summary tables, and fixes a column swap found in
+  // the original Phuket h=1 extraction (Model R² and Persistence R² were
+  // transposed for that one city/horizon only).
+  var CITY_SERIES = {
+    chiangmai: {
+      proposed:    {r2:[.930,.849,.798,.741,.746,.705,.672,.734,.665,.697,.717,.689], rmse:[3.3,4.9,5.6,6.4,6.3,6.8,7.2,6.5,7.2,6.9,6.6,7.0], smape:[11,18,20,23,23,25,26,24,26,24,24,25]},
+      baseline:    {r2:[.821,.767,.739,.710,.688,.658,.668,.657,.629,.624,.599,.587], rmse:[5.3,6.0,6.4,6.7,7.0,7.3,7.2,7.3,7.6,7.7,7.9,8.0], smape:[20,23,24,25,26,27,26,27,27,28,28,29]},
+      persistence: {r2:[.935,.860,.794,.734,.683,.647,.628,.621,.626,.636,.645,.641], rmse:[3.2,4.7,5.7,6.5,7.0,7.4,7.6,7.7,7.7,7.5,7.5,7.5], smape:[10,15,19,22,25,26,27,28,28,28,28,28]},
+      seasonal:    {r2:[.581,.580,.579,.578,.578,.577,.576,.575,.574,.572,.570,.569], rmse:[8.1,8.1,8.1,8.1,8.1,8.1,8.1,8.2,8.2,8.2,8.2,8.2], smape:[31,31,31,31,31,31,31,31,31,31,31,31]}
+    },
+    chiangrai: {
+      proposed:    {r2:[.955,.923,.888,.852,.820,.792,.765,.751,.735,.718,.709,.706], rmse:[7.0,9.1,10.9,12.5,13.8,14.8,15.7,16.2,16.6,17.1,17.3,17.3], smape:[21,30,36,38,42,45,47,44,46,45,45,44]},
+      baseline:    {r2:[.539,.537,.525,.521,.507,.464,.475,.424,.430,.414,.421,.404], rmse:[22.3,22.3,22.5,22.6,22.9,23.8,23.5,24.6,24.4,24.7,24.4,24.7], smape:[38,39,41,41,42,43,44,45,45,46,46,46]},
+      persistence: {r2:[.955,.919,.877,.836,.797,.759,.727,.701,.678,.658,.641,.628], rmse:[7.0,9.3,11.5,13.2,14.7,15.9,16.9,17.7,18.3,18.9,19.2,19.5], smape:[17,25,30,34,37,39,41,42,42,43,43,44]},
+      seasonal:    {r2:[.732,.736,.737,.737,.737,.738,.738,.738,.738,.738,.738,.738], rmse:[17.0,16.8,16.8,16.7,16.7,16.6,16.6,16.6,16.6,16.5,16.4,16.3], smape:[45,45,45,45,45,45,45,45,45,45,45,45]}
+    },
+    nan: {
+      proposed:    {r2:[.938,.866,.808,.753,.708,.661,.620,.615,.576,.573,.574,.568], rmse:[7.8,11.5,13.8,15.6,17.0,18.3,19.3,19.4,20.4,20.5,20.4,20.6], smape:[23,31,36,40,42,45,47,45,46,46,45,45]},
+      baseline:    {r2:[.574,.571,.557,.539,.522,.497,.499,.461,.463,.441,.441,.426], rmse:[20.5,20.6,20.9,21.4,21.7,22.3,22.2,23.0,23.0,23.4,23.4,23.7], smape:[37,39,41,42,43,44,44,45,45,46,46,46]},
+      persistence: {r2:[.936,.853,.777,.704,.631,.567,.514,.472,.441,.419,.405,.396], rmse:[7.9,12.1,14.9,17.1,19.1,20.7,21.9,22.8,23.4,23.9,24.2,24.3], smape:[20,29,35,40,43,46,48,50,50,51,51,51]},
+      seasonal:    {r2:[.693,.693,.693,.693,.693,.693,.693,.693,.693,.693,.693,.693], rmse:[17.4,17.4,17.4,17.4,17.4,17.4,17.4,17.4,17.4,17.4,17.4,17.3], smape:[47,47,47,47,47,47,47,47,47,47,47,47]}
+    },
+    khonkaen: {
+      proposed:    {r2:[.917,.835,.748,.688,.607,.535,.515,.490,.449,.439,.515,.500], rmse:[5.4,7.6,9.5,10.6,11.8,12.9,13.2,13.6,14.1,14.3,13.3,13.5], smape:[14,20,25,28,32,36,36,37,39,39,36,36]},
+      baseline:    {r2:[.732,.689,.641,.580,.508,.532,.485,.464,.432,.414,.420,.428], rmse:[9.7,10.5,11.3,12.2,13.3,13.0,13.6,13.9,14.3,14.6,14.5,14.4], smape:[25,27,30,32,34,34,36,36,38,38,38,38]},
+      persistence: {r2:[.917,.783,.643,.506,.379,.270,.183,.117,.073,.050,.046,.041], rmse:[5.4,8.8,11.3,13.3,14.9,16.2,17.1,17.8,18.3,18.6,18.6,18.7], smape:[13,22,29,35,40,44,46,48,49,50,50,50]},
+      seasonal:    {r2:[.499,.501,.502,.503,.503,.504,.505,.506,.507,.509,.511,.514], rmse:[13.3,13.3,13.3,13.3,13.3,13.3,13.3,13.3,13.4,13.3,13.3,13.3], smape:[34,34,34,34,34,34,34,34,34,34,34,34]}
+    },
+    kanchanaburi: {
+      proposed:    {r2:[.910,.839,.775,.721,.679,.628,.604,.584,.544,.533,.563,.554], rmse:[7.0,9.4,11.1,12.3,13.2,14.2,14.7,15.0,15.8,16.0,15.4,15.6], smape:[25,33,38,41,43,46,47,48,50,50,50,50]},
+      baseline:    {r2:[.711,.703,.679,.663,.637,.641,.618,.596,.588,.572,.563,.566], rmse:[12.6,12.7,13.2,13.6,14.1,14.0,14.4,14.8,15.0,15.3,15.4,15.4], smape:[38,40,42,43,45,45,47,48,49,49,50,50]},
+      persistence: {r2:[.907,.818,.728,.650,.573,.509,.451,.406,.373,.354,.341,.332], rmse:[7.1,10.0,12.2,13.8,15.2,16.4,17.3,18.0,18.5,18.8,18.9,19.1], smape:[21,31,37,41,45,48,50,52,54,55,55,56]},
+      seasonal:    {r2:[.621,.621,.619,.619,.617,.617,.617,.616,.617,.617,.617,.617], rmse:[14.4,14.4,14.4,14.4,14.5,14.5,14.5,14.5,14.5,14.4,14.4,14.4], smape:[50,50,50,50,50,50,50,51,51,51,51,51]}
+    },
+    pattaya: {
+      proposed:    {r2:[.755,.673,.622,.583,.560,.522,.533,.521,.490,.494,.512,.517], rmse:[8.0,9.3,9.9,10.5,10.7,11.2,11.1,11.2,11.6,11.5,11.3,11.2], smape:[27,34,39,43,45,49,48,48,50,52,51,51]},
+      baseline:    {r2:[.709,.687,.660,.643,.613,.619,.600,.592,.573,.572,.547,.566], rmse:[8.7,9.1,9.4,9.7,10.1,10.0,10.2,10.3,10.6,10.6,10.9,10.7], smape:[39,42,45,45,48,48,50,51,52,52,53,52]},
+      persistence: {r2:[.754,.645,.567,.512,.476,.449,.428,.413,.403,.405,.396,.398], rmse:[8.0,9.6,10.7,11.3,11.7,12.0,12.2,12.4,12.5,12.5,12.6,12.6], smape:[23,33,39,43,46,48,49,50,51,51,51,51]},
+      seasonal:    {r2:[.394,.394,.394,.394,.394,.394,.394,.394,.394,.394,.394,.394], rmse:[12.6,12.6,12.6,12.6,12.6,12.6,12.6,12.6,12.6,12.6,12.6,12.6], smape:[51,51,51,51,51,51,51,51,51,51,51,51]}
+    },
+    siracha: {
+      proposed:    {r2:[.960,.918,.880,.848,.815,.774,.770,.765,.738,.716,.735,.743], rmse:[3.2,4.6,5.6,6.3,7.0,7.7,7.8,7.8,8.3,8.6,8.3,8.2], smape:[54,58,63,67,69,74,73,74,75,78,78,77]},
+      baseline:    {r2:[.850,.834,.806,.784,.752,.756,.732,.717,.694,.697,.667,.687], rmse:[6.3,6.6,7.1,7.5,8.1,8.0,8.4,8.6,9.0,8.9,9.3,9.1], smape:[69,73,75,76,78,78,80,80,82,82,83,82]},
+      persistence: {r2:[.964,.917,.875,.840,.808,.779,.755,.735,.717,.703,.693,.684], rmse:[3.1,4.7,5.7,6.5,7.1,7.6,8.0,8.3,8.6,8.8,9.0,9.1], smape:[37,50,59,65,68,71,73,74,75,75,76,76]},
+      seasonal:    {r2:[.700,.700,.700,.699,.699,.699,.699,.700,.700,.700,.700,.700], rmse:[8.9,8.9,8.9,8.9,8.9,8.9,8.9,8.9,8.9,8.9,8.9,8.9], smape:[73,73,73,73,73,73,73,73,73,73,73,73]}
+    },
+    hatyai: {
+      proposed:    {r2:[.834,.707,.650,.599,.540,.453,.424,.418,.355,.363,.385,.407], rmse:[4.1,5.5,6.0,6.4,6.8,7.5,7.7,7.7,8.1,8.0,7.9,7.8], smape:[20,28,31,34,36,40,41,41,43,43,42,41]},
+      baseline:    {r2:[.686,.643,.579,.549,.502,.468,.428,.421,.409,.397,.384,.398], rmse:[5.7,6.0,6.5,6.8,7.1,7.4,7.6,7.7,7.8,7.8,7.9,7.8], smape:[32,34,37,38,39,41,42,42,42,43,43,42]},
+      persistence: {r2:[.834,.684,.578,.486,.397,.315,.243,.180,.131,.106,.091,.069], rmse:[4.1,5.7,6.6,7.2,7.8,8.4,8.8,9.1,9.4,9.5,9.6,9.7], smape:[19,27,32,37,41,44,46,49,50,51,52,52]},
+      seasonal:    {r2:[.249,.248,.248,.247,.246,.246,.246,.245,.245,.244,.244,.243], rmse:[8.7,8.7,8.8,8.8,8.8,8.8,8.8,8.8,8.8,8.8,8.8,8.8], smape:[43,43,43,43,43,43,43,43,43,44,44,44]}
+    },
+    phuket: {
+      proposed:    {r2:[.956,.895,.859,.816,.765,.732,.697,.688,.626,.633,.633,.655], rmse:[1.9,2.9,3.3,3.8,4.2,4.5,4.8,4.8,5.3,5.2,5.2,5.0], smape:[24,33,36,37,42,43,46,45,49,48,48,47]},
+      baseline:    {r2:[.845,.795,.757,.726,.691,.620,.573,.573,.531,.496,.462,.486], rmse:[3.5,4.0,4.3,4.6,4.9,5.4,5.7,5.7,5.9,6.1,6.3,6.1], smape:[38,43,45,48,49,53,55,55,58,59,60,58]},
+      persistence: {r2:[.977,.951,.925,.898,.874,.851,.829,.808,.789,.774,.761,.748], rmse:[1.3,2.0,2.4,2.8,3.1,3.4,3.6,3.8,4.0,4.1,4.2,4.3], smape:[13,20,25,29,32,34,36,38,39,40,41,41]},
+      seasonal:    {r2:[.662,.660,.657,.654,.652,.649,.646,.644,.641,.638,.636,.633], rmse:[5.1,5.1,5.1,5.1,5.2,5.2,5.2,5.2,5.2,5.2,5.2,5.2], smape:[45,45,45,45,45,45,45,45,45,45,45,45]}
     }
   };
 
@@ -371,10 +429,12 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
 
   function lineChartSvg(baseline, keys, xLabels, opts){
     opts = opts || {};
+    var getVal = opts.getVal || function(r,k){ return r[k]; };
+    var tickIdx = opts.tickIdx || keys.map(function(_,i){ return i; });
     var W = 300, H = 190, L = 34, R = 10, T = 12, B = 24;
     var plotW = W - L - R, plotH = H - T - B;
     var allVals = [];
-    baseline.forEach(function(r){ keys.forEach(function(k){ allVals.push(r[k]); }); });
+    baseline.forEach(function(r){ keys.forEach(function(k){ allVals.push(getVal(r,k)); }); });
     var dataMin = Math.min.apply(null, allVals), dataMax = Math.max.apply(null, allVals);
     var axis = niceAxis(dataMin, dataMax, !!opts.zeroBase);
     function xAt(i){ return L + (keys.length === 1 ? plotW / 2 : i * (plotW / (keys.length - 1))); }
@@ -385,8 +445,8 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
         "<text class='chart-tick' x='"+(L-6)+"' y='"+(yAt(t)+3)+"' text-anchor='end'>"+(opts.tickFmt ? opts.tickFmt(t) : t)+"</text>";
     }).join("");
 
-    var xAxisLabels = xLabels.map(function(lab,i){
-      return "<text class='chart-tick' x='"+xAt(i)+"' y='"+(H-6)+"' text-anchor='middle'>"+lab+"</text>";
+    var xAxisLabels = tickIdx.map(function(i){
+      return "<text class='chart-tick' x='"+xAt(i)+"' y='"+(H-6)+"' text-anchor='middle'>"+xLabels[i]+"</text>";
     }).join("");
 
     var axisLine = "<line class='chart-axis-line' x1='"+L+"' x2='"+L+"' y1='"+T+"' y2='"+(H-B)+"'/>" +
@@ -397,20 +457,126 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
       return rank[cmpGroup(a.m)] - rank[cmpGroup(b.m)];
     });
 
-    var linesHtml = order.map(function(r){
+    var seriesData = [];
+    var linesHtml = order.map(function(r, idx){
       var g = cmpGroup(r.m);
-      var pts = keys.map(function(k,i){ return xAt(i)+","+yAt(r[k]); }).join(" L ");
+      var pts = keys.map(function(k,i){ return xAt(i)+","+yAt(getVal(r,k)); }).join(" L ");
       var sw = g === "proposed" ? 2.6 : (g === "baseline" ? 2 : 1.3);
       var op = g === "proposed" ? 1 : (g === "baseline" ? 0.95 : 0.5);
-      var dots = keys.map(function(k,i){
+      var dots = tickIdx.map(function(i){
+        var k = keys[i];
         var rr = g === "other" ? 2.1 : 3;
-        var val = opts.tooltipFmt ? opts.tooltipFmt(r[k]) : r[k];
-        return "<circle class='cmp-dot grp-"+g+"' cx='"+xAt(i)+"' cy='"+yAt(r[k])+"' r='"+rr+"' fill='"+CMP_COLOR[g]+"' opacity='"+op+"'><title>"+CMP_SHORT[r.m]+" — "+xLabels[i]+": "+val+"</title></circle>";
+        var val = opts.tooltipFmt ? opts.tooltipFmt(getVal(r,k)) : getVal(r,k);
+        return "<circle class='cmp-dot' cx='"+xAt(i)+"' cy='"+yAt(getVal(r,k))+"' r='"+rr+"' fill='"+CMP_COLOR[g]+"'><title>"+CMP_SHORT[r.m]+" — "+xLabels[i]+": "+val+"</title></circle>";
       }).join("");
-      return "<path class='cmp-line grp-"+g+"' d='M "+pts+"' stroke='"+CMP_COLOR[g]+"' stroke-width='"+sw+"' opacity='"+op+"'/>" + dots;
+      seriesData.push({
+        label: CMP_SHORT[r.m], group: g,
+        vals: keys.map(function(k){ return getVal(r,k); }),
+        txt: keys.map(function(k){ return opts.tooltipFmt ? opts.tooltipFmt(getVal(r,k)) : getVal(r,k); })
+      });
+      return "<g class='series grp-"+g+"' data-idx='"+idx+"' style='opacity:"+op+"'>" +
+        "<path class='cmp-line' d='M "+pts+"' stroke='"+CMP_COLOR[g]+"' stroke-width='"+sw+"'/>" + dots +
+        "</g>";
     }).join("");
 
-    return "<svg viewBox='0 0 "+W+" "+H+"' style='aspect-ratio:"+W+"/"+H+"' preserveAspectRatio='xMidYMid meet'>"+grid+axisLine+linesHtml+xAxisLabels+"</svg>";
+    var hoverLayer =
+      "<g class='hover-crosshair' style='display:none'><line x1='0' x2='0' y1='"+T+"' y2='"+(H-B)+"'/></g>" +
+      "<circle class='hover-point' r='4' style='display:none' stroke='var(--card)' stroke-width='1.5'/>" +
+      "<g class='hover-tip' style='display:none'></g>" +
+      "<rect class='hover-capture' x='"+L+"' y='"+T+"' width='"+plotW+"' height='"+plotH+"' fill='transparent'/>";
+
+    return "<svg class='cmp-chart' data-chart='cmp-line' "+
+      "data-l='"+L+"' data-r='"+R+"' data-t='"+T+"' data-b='"+B+"' data-w='"+W+"' data-h='"+H+"' "+
+      "data-amin='"+axis.min+"' data-amax='"+axis.max+"' data-nk='"+keys.length+"' "+
+      "data-xlabels='"+JSON.stringify(xLabels).replace(/'/g,"&#39;")+"' "+
+      "data-series='"+JSON.stringify(seriesData).replace(/'/g,"&#39;")+"' "+
+      "viewBox='0 0 "+W+" "+H+"' style='aspect-ratio:"+W+"/"+H+"' preserveAspectRatio='xMidYMid meet'>"+
+      grid+axisLine+linesHtml+xAxisLabels+hoverLayer+"</svg>";
+  }
+
+  // Wires the same crosshair+tooltip hover behavior as the city charts onto
+  // Bangkok's 11-method comparison line charts (R², RMSE). Each line is its
+  // own series here (not grouped), so hover finds the single nearest method
+  // among all 11 rather than one of 4 fixed groups.
+  function wireComparisonChartHover(root){
+    var svgs = root.querySelectorAll("svg[data-chart='cmp-line']");
+    Array.prototype.forEach.call(svgs, function(svg){
+      var L = +svg.getAttribute("data-l"), R = +svg.getAttribute("data-r");
+      var T = +svg.getAttribute("data-t"), B = +svg.getAttribute("data-b");
+      var W = +svg.getAttribute("data-w"), H = +svg.getAttribute("data-h");
+      var amin = +svg.getAttribute("data-amin"), amax = +svg.getAttribute("data-amax");
+      var nk = +svg.getAttribute("data-nk");
+      var xLabels = JSON.parse(svg.getAttribute("data-xlabels"));
+      var seriesData = JSON.parse(svg.getAttribute("data-series"));
+      var plotW = W - L - R, plotH = H - T - B;
+      function xAt(i){ return L + (nk === 1 ? plotW / 2 : i * (plotW / (nk - 1))); }
+      function yAt(v){ return T + plotH - (v - amin) / (amax - amin) * plotH; }
+
+      var crosshair = svg.querySelector(".hover-crosshair");
+      var crosshairLine = crosshair.querySelector("line");
+      var point = svg.querySelector(".hover-point");
+      var tip = svg.querySelector(".hover-tip");
+      var capture = svg.querySelector(".hover-capture");
+      var series = Array.prototype.slice.call(svg.querySelectorAll(".series"));
+
+      function clearHover(){
+        series.forEach(function(el){ el.classList.remove("hover-focus","hover-dim"); });
+        crosshair.style.display = "none";
+        point.style.display = "none";
+        tip.style.display = "none";
+      }
+
+      function onMove(evt){
+        var rect = svg.getBoundingClientRect();
+        if(rect.width === 0 || rect.height === 0) return;
+        var scaleX = W / rect.width, scaleY = H / rect.height;
+        var mx = (evt.clientX - rect.left) * scaleX;
+        var my = (evt.clientY - rect.top) * scaleY;
+        if(mx < L || mx > W - R){ clearHover(); return; }
+        var idx = nk === 1 ? 0 : Math.round((mx - L) / (plotW / (nk - 1)));
+        idx = Math.max(0, Math.min(nk - 1, idx));
+        var x = xAt(idx);
+        var bestI = 0, bestDist = Infinity, bestY = 0;
+        seriesData.forEach(function(s, i){
+          var y = yAt(s.vals[idx]);
+          var d = Math.abs(y - my);
+          if(d < bestDist){ bestDist = d; bestI = i; bestY = y; }
+        });
+        var best = seriesData[bestI];
+
+        series.forEach(function(el){
+          var isBest = (+el.getAttribute("data-idx")) === bestI;
+          el.classList.toggle("hover-focus", isBest);
+          el.classList.toggle("hover-dim", !isBest);
+        });
+        crosshair.style.display = "";
+        crosshairLine.setAttribute("x1", x); crosshairLine.setAttribute("x2", x);
+        point.style.display = "";
+        point.setAttribute("cx", x); point.setAttribute("cy", bestY);
+        point.setAttribute("fill", CMP_COLOR[best.group]);
+
+        var valueTxt = xLabels[idx] + "  ·  " + best.txt[idx];
+        var tipW = Math.max(best.label.length, valueTxt.length) * 5.6 + 16;
+        var tipH = 34;
+        var tipX = x + 8; if(tipX + tipW > W - R) tipX = x - 8 - tipW;
+        var tipY = bestY - tipH - 8; if(tipY < T) tipY = bestY + 10;
+        tip.innerHTML =
+          "<rect x='"+tipX+"' y='"+tipY+"' width='"+tipW+"' height='"+tipH+"' rx='6'/>" +
+          "<text class='tip-label' x='"+(tipX+9)+"' y='"+(tipY+13)+"'>"+best.label+"</text>" +
+          "<text class='tip-value' x='"+(tipX+9)+"' y='"+(tipY+27)+"'>"+valueTxt+"</text>";
+        tip.style.display = "";
+      }
+
+      capture.addEventListener("mousemove", onMove);
+      capture.addEventListener("mouseleave", clearHover);
+      capture.addEventListener("touchmove", function(evt){
+        if(evt.touches && evt.touches[0]){
+          onMove({clientX: evt.touches[0].clientX, clientY: evt.touches[0].clientY});
+          evt.preventDefault();
+        }
+      }, {passive:false});
+      capture.addEventListener("touchend", clearHover);
+    });
   }
 
   function barChartSvg(baseline){
@@ -493,11 +659,11 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
       "</div>";
   }
 
-  function wireComparisonLegend(){
+  function wireComparisonLegend(groups){
+    groups = groups || ["proposed","baseline","other"];
     var chips = panel.querySelectorAll(".cmp-chip");
     if(!chips.length) return;
     var isolated = null;
-    var groups = ["proposed","baseline","other"];
     function apply(){
       Array.prototype.forEach.call(chips, function(c){
         var g = c.getAttribute("data-group");
@@ -521,6 +687,190 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
     apply();
   }
 
+  // ---- Full per-horizon city charts (R², RMSE, sMAPE), built from CITY_SERIES ----
+  var CITY_GROUP_COLOR = {proposed:"var(--green)", baseline:"var(--rust)", persistence:"var(--amber)", seasonal:"var(--muted)"};
+  var CITY_GROUP_LABEL = {proposed:"Proposed (tuned)", baseline:"CNN-BiLSTM (no weather)", persistence:"Persistence", seasonal:"Seasonal naive (24h)"};
+  var CITY_GROUP_DRAW_ORDER = ["seasonal","persistence","baseline","proposed"];
+  var CITY_GROUP_DISPLAY_ORDER = ["proposed","baseline","persistence","seasonal"];
+
+  function avg12(arr){ var s=0; for(var i=0;i<arr.length;i++){ s+=arr[i]; } return s/arr.length; }
+
+  function cityLineChart(series, metric, opts){
+    opts = opts || {};
+    var W = 300, H = 190, L = 34, R = 10, T = 12, B = 24;
+    var plotW = W - L - R, plotH = H - T - B;
+    var allVals = [];
+    CITY_GROUP_DRAW_ORDER.forEach(function(g){ series[g][metric].forEach(function(v){ allVals.push(v); }); });
+    var dataMin = Math.min.apply(null, allVals), dataMax = Math.max.apply(null, allVals);
+    var axis = niceAxis(dataMin, dataMax, !!opts.zeroBase);
+    function xAt(i){ return L + i * (plotW / 11); }
+    function yAt(v){ return T + plotH - (v - axis.min) / (axis.max - axis.min) * plotH; }
+
+    var grid = axis.ticks.map(function(t){
+      return "<line class='chart-grid-line' x1='"+L+"' x2='"+(W-R)+"' y1='"+yAt(t)+"' y2='"+yAt(t)+"'/>" +
+        "<text class='chart-tick' x='"+(L-6)+"' y='"+(yAt(t)+3)+"' text-anchor='end'>"+(opts.tickFmt ? opts.tickFmt(t) : t)+"</text>";
+    }).join("");
+
+    var xTicks = [0,2,5,8,11];
+    var xAxisLabels = xTicks.map(function(i){
+      return "<text class='chart-tick' x='"+xAt(i)+"' y='"+(H-6)+"' text-anchor='middle'>h="+(i+1)+"</text>";
+    }).join("");
+
+    var axisLine = "<line class='chart-axis-line' x1='"+L+"' x2='"+L+"' y1='"+T+"' y2='"+(H-B)+"'/>" +
+      "<line class='chart-axis-line' x1='"+L+"' x2='"+(W-R)+"' y1='"+(H-B)+"' y2='"+(H-B)+"'/>";
+
+    var linesHtml = CITY_GROUP_DRAW_ORDER.map(function(g){
+      var vals = series[g][metric];
+      var pts = vals.map(function(v,i){ return xAt(i)+","+yAt(v); }).join(" L ");
+      var sw = g === "proposed" ? 2.6 : (g === "baseline" ? 2 : 1.4);
+      var op = g === "proposed" ? 1 : (g === "baseline" ? 0.95 : 0.75);
+      var dots = xTicks.map(function(i){
+        var v = vals[i];
+        var val = opts.tooltipFmt ? opts.tooltipFmt(v) : v;
+        var rr = g === "proposed" ? 3 : 2.3;
+        return "<circle class='cmp-dot' cx='"+xAt(i)+"' cy='"+yAt(v)+"' r='"+rr+"' fill='"+CITY_GROUP_COLOR[g]+"'><title>"+CITY_GROUP_LABEL[g]+" — h="+(i+1)+": "+val+"</title></circle>";
+      }).join("");
+      return "<g class='series grp-"+g+"' data-group='"+g+"' style='opacity:"+op+"'>" +
+        "<path class='cmp-line' d='M "+pts+"' stroke='"+CITY_GROUP_COLOR[g]+"' stroke-width='"+sw+"'/>" + dots +
+        "</g>";
+    }).join("");
+
+    var hoverValues = {};
+    CITY_GROUP_DRAW_ORDER.forEach(function(g){ hoverValues[g] = series[g][metric]; });
+    var hoverLayer =
+      "<g class='hover-crosshair' style='display:none'><line x1='0' x2='0' y1='"+T+"' y2='"+(H-B)+"'/></g>" +
+      "<circle class='hover-point' r='4' style='display:none' stroke='var(--card)' stroke-width='1.5'/>" +
+      "<g class='hover-tip' style='display:none'></g>" +
+      "<rect class='hover-capture' x='"+L+"' y='"+T+"' width='"+plotW+"' height='"+plotH+"' fill='transparent'/>";
+
+    return "<svg class='city-chart' data-chart='city-line' data-metric='"+metric+"' "+
+      "data-l='"+L+"' data-r='"+R+"' data-t='"+T+"' data-b='"+B+"' data-w='"+W+"' data-h='"+H+"' "+
+      "data-amin='"+axis.min+"' data-amax='"+axis.max+"' "+
+      "data-values='"+JSON.stringify(hoverValues).replace(/'/g,"&#39;")+"' "+
+      "viewBox='0 0 "+W+" "+H+"' style='aspect-ratio:"+W+"/"+H+"' preserveAspectRatio='xMidYMid meet'>"+
+      grid+axisLine+linesHtml+xAxisLabels+hoverLayer+"</svg>";
+  }
+
+  // Wires a mousemove-driven crosshair+tooltip over every city line chart in
+  // `root`: snaps to the nearest horizon, picks the nearest series by y
+  // distance, highlights that series (others fade), and shows its value.
+  function wireCityChartHover(root){
+    var svgs = root.querySelectorAll("svg[data-chart='city-line']");
+    Array.prototype.forEach.call(svgs, function(svg){
+      var L = +svg.getAttribute("data-l"), R = +svg.getAttribute("data-r");
+      var T = +svg.getAttribute("data-t"), B = +svg.getAttribute("data-b");
+      var W = +svg.getAttribute("data-w"), H = +svg.getAttribute("data-h");
+      var amin = +svg.getAttribute("data-amin"), amax = +svg.getAttribute("data-amax");
+      var metric = svg.getAttribute("data-metric");
+      var values = JSON.parse(svg.getAttribute("data-values"));
+      var plotW = W - L - R, plotH = H - T - B;
+      function xAt(i){ return L + i * (plotW / 11); }
+      function yAt(v){ return T + plotH - (v - amin) / (amax - amin) * plotH; }
+      function fmtVal(v){
+        if(metric === "r2") return v.toFixed(3);
+        if(metric === "rmse") return v.toFixed(2);
+        return v.toFixed(1) + "%";
+      }
+      var crosshair = svg.querySelector(".hover-crosshair");
+      var crosshairLine = crosshair.querySelector("line");
+      var point = svg.querySelector(".hover-point");
+      var tip = svg.querySelector(".hover-tip");
+      var capture = svg.querySelector(".hover-capture");
+      var series = Array.prototype.slice.call(svg.querySelectorAll(".series"));
+
+      function setHover(group){
+        series.forEach(function(el){
+          var g = el.getAttribute("data-group");
+          el.classList.toggle("hover-focus", g === group);
+          el.classList.toggle("hover-dim", g !== group);
+        });
+      }
+      function clearHover(){
+        series.forEach(function(el){ el.classList.remove("hover-focus","hover-dim"); });
+        crosshair.style.display = "none";
+        point.style.display = "none";
+        tip.style.display = "none";
+      }
+
+      function onMove(evt){
+        var rect = svg.getBoundingClientRect();
+        if(rect.width === 0 || rect.height === 0) return;
+        var scaleX = W / rect.width, scaleY = H / rect.height;
+        var mx = (evt.clientX - rect.left) * scaleX;
+        var my = (evt.clientY - rect.top) * scaleY;
+        if(mx < L || mx > W - R){ clearHover(); return; }
+        var idx = Math.round((mx - L) / (plotW / 11));
+        idx = Math.max(0, Math.min(11, idx));
+        var x = xAt(idx);
+        var bestG = null, bestDist = Infinity, bestY = 0, bestV = 0;
+        CITY_GROUP_DRAW_ORDER.forEach(function(g){
+          var v = values[g][idx];
+          var y = yAt(v);
+          var d = Math.abs(y - my);
+          if(d < bestDist){ bestDist = d; bestG = g; bestY = y; bestV = v; }
+        });
+
+        setHover(bestG);
+        crosshair.style.display = "";
+        crosshairLine.setAttribute("x1", x); crosshairLine.setAttribute("x2", x);
+        point.style.display = "";
+        point.setAttribute("cx", x); point.setAttribute("cy", bestY);
+        point.setAttribute("fill", CITY_GROUP_COLOR[bestG]);
+
+        var label = CITY_GROUP_LABEL[bestG];
+        var valueTxt = "h=" + (idx + 1) + "  ·  " + fmtVal(bestV);
+        var tipW = Math.max(label.length, valueTxt.length) * 5.6 + 16;
+        var tipH = 34;
+        var tipX = x + 8; if(tipX + tipW > W - R) tipX = x - 8 - tipW;
+        var tipY = bestY - tipH - 8; if(tipY < T) tipY = bestY + 10;
+        tip.innerHTML =
+          "<rect x='"+tipX+"' y='"+tipY+"' width='"+tipW+"' height='"+tipH+"' rx='6'/>" +
+          "<text class='tip-label' x='"+(tipX+9)+"' y='"+(tipY+13)+"'>"+label+"</text>" +
+          "<text class='tip-value' x='"+(tipX+9)+"' y='"+(tipY+27)+"'>"+valueTxt+"</text>";
+        tip.style.display = "";
+      }
+
+      capture.addEventListener("mousemove", onMove);
+      capture.addEventListener("mouseleave", clearHover);
+      capture.addEventListener("touchmove", function(evt){
+        if(evt.touches && evt.touches[0]){
+          onMove({clientX: evt.touches[0].clientX, clientY: evt.touches[0].clientY});
+          evt.preventDefault();
+        }
+      }, {passive:false});
+      capture.addEventListener("touchend", clearHover);
+    });
+  }
+
+  function cityLegendHtml(){
+    return "<div class='cmp-legend'>" +
+      CITY_GROUP_DISPLAY_ORDER.map(function(g){
+        return "<button type='button' class='cmp-chip is-active' data-group='"+g+"'><i style='background:"+CITY_GROUP_COLOR[g]+"'></i>"+CITY_GROUP_LABEL[g]+"</button>";
+      }).join("") +
+      "</div>";
+  }
+
+  function cityStatsTable(series){
+    var rows = CITY_GROUP_DISPLAY_ORDER.map(function(g){
+      return {g:g, label:CITY_GROUP_LABEL[g], r2:avg12(series[g].r2), rmse:avg12(series[g].rmse), smape:avg12(series[g].smape)};
+    });
+    function bestIdx(key, higherBetter){
+      var idx = 0;
+      for(var i=1;i<rows.length;i++){
+        if(higherBetter ? rows[i][key] > rows[idx][key] : rows[i][key] < rows[idx][key]) idx = i;
+      }
+      return idx;
+    }
+    var bR2 = bestIdx("r2", true), bRmse = bestIdx("rmse", false), bSmape = bestIdx("smape", false);
+    var trs = rows.map(function(r,i){
+      return "<tr><td>"+r.label+"</td>" +
+        "<td class='"+(i===bR2?"best":"")+"'>"+fmt(r.r2)+"</td>" +
+        "<td class='"+(i===bRmse?"best":"")+"'>"+fmt(r.rmse,2)+"</td>" +
+        "<td class='"+(i===bSmape?"best":"")+"'>"+pct(r.smape)+"</td></tr>";
+    }).join("");
+    return "<div class='table-scroll'><table><thead><tr><th>Method</th><th>Avg R²</th><th>Avg RMSE (µg/m³)</th><th>Avg sMAPE</th></tr></thead><tbody>"+trs+"</tbody></table></div>";
+  }
+
   var svgNS = "http://www.w3.org/2000/svg";
   var markersG = document.getElementById("markers");
   var chipRail = document.getElementById("chipRail");
@@ -538,6 +888,7 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
       g.setAttribute("tabindex", "0");
       g.setAttribute("role", "button");
       g.setAttribute("aria-label", DATA[key].name);
+      markersG.appendChild(g); // attach first so getBBox() below measures real layout
 
       var color = "var(--" + (DATA[key].badge === "win" ? "green" : DATA[key].badge === "mixed" ? "amber" : DATA[key].badge === "loss" ? "rust" : "ink") + ")";
 
@@ -580,9 +931,37 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
         g.appendChild(hit2);
       }
 
+      // Hover/focus label: name pill, auto-sized to the text and nudged
+      // sideways if it would overhang the map's left/right edge.
+      var labelG = document.createElementNS(svgNS, "g");
+      labelG.setAttribute("class", "marker-label");
+      var labelRect = document.createElementNS(svgNS, "rect");
+      labelRect.setAttribute("rx", "5");
+      var labelText = document.createElementNS(svgNS, "text");
+      labelText.setAttribute("x", c.x);
+      labelText.setAttribute("y", c.y - 14);
+      labelText.setAttribute("text-anchor", "middle");
+      labelText.textContent = DATA[key].name;
+      labelG.appendChild(labelRect);
+      labelG.appendChild(labelText);
+      g.appendChild(labelG);
+
+      var padX = 6, padY = 4;
+      try {
+        var bb = labelText.getBBox();
+        var rx = bb.x - padX, ry = bb.y - padY, rw = bb.width + padX*2, rh = bb.height + padY*2;
+        var dx = 0;
+        if(rx < 2) dx = 2 - rx;
+        else if(rx + rw > 347) dx = 347 - (rx + rw);
+        if(dx !== 0) labelG.setAttribute("transform", "translate(" + dx + ",0)");
+        labelRect.setAttribute("x", rx);
+        labelRect.setAttribute("y", ry);
+        labelRect.setAttribute("width", rw);
+        labelRect.setAttribute("height", rh);
+      } catch(e){ /* getBBox can throw if hidden ancestor — label still shows via native size */ }
+
       g.addEventListener("click", function(){ select(key); });
       g.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); select(key); } });
-      markersG.appendChild(g);
     });
   }
 
@@ -632,19 +1011,27 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
 
       "<p class='section-title'>Proposed vs. other methods, across horizons</p>" +
       "<div class='chart-grid'>" +
-        "<div class='chart-card'><h4>R² by horizon (higher is better)</h4>" +
-          lineChartSvg(d.baseline, ["h1","h3","h6","h12"], ["h=1","h=3","h=6","h=12"], {
+        "<div class='chart-card wide'><h4>R² by horizon (higher is better)</h4>" +
+          lineChartSvg(d.baseline, [0,1,2,3,4,5,6,7,8,9,10,11], ["h=1","h=2","h=3","h=4","h=5","h=6","h=7","h=8","h=9","h=10","h=11","h=12"], {
+            tickIdx: [0,2,5,8,11],
+            getVal: function(r,k){ return r.r2full[k]; },
             tickFmt: function(t){ return t.toFixed(1); },
             tooltipFmt: function(v){ return v.toFixed(3); }
           }) +
         "</div>" +
-        "<div class='chart-card'><h4>RMSE by horizon, µg/m³ (lower is better)</h4>" +
-          lineChartSvg(d.baseline, ["rmse1","rmse3","rmse6","rmse12"], ["h=1","h=3","h=6","h=12"], {
+      "</div>" +
+      "<div class='chart-grid'>" +
+        "<div class='chart-card wide'><h4>RMSE by horizon, µg/m³ (lower is better)</h4>" +
+          lineChartSvg(d.baseline, [0,1,2,3,4,5,6,7,8,9,10,11], ["h=1","h=2","h=3","h=4","h=5","h=6","h=7","h=8","h=9","h=10","h=11","h=12"], {
+            tickIdx: [0,2,5,8,11],
+            getVal: function(r,k){ return r.rmsefull[k]; },
             zeroBase: true,
             tickFmt: function(t){ return t.toFixed(0); },
             tooltipFmt: function(v){ return v.toFixed(2); }
           }) +
         "</div>" +
+      "</div>" +
+      "<div class='chart-grid'>" +
         "<div class='chart-card wide'><h4>sMAPE, average across all 12 horizons (lower is better)</h4>" +
           barChartSvg(d.baseline) +
         "</div>" +
@@ -652,80 +1039,62 @@ footer{margin-top:40px; font-size:12.5px; color:var(--muted); border-top:1px sol
       cmpLegendHtml();
 
     wireComparisonLegend();
+    wireComparisonChartHover(panel);
   }
 
   function renderCity(key){
     var d = DATA[key];
+    var series = CITY_SERIES[key];
     var flagsHtml = d.elevationCorrected ? "<div class='flags'><span class='flag'>Elevation-corrected</span></div>" : "";
-    var mechLossNote = d.mechLoss ? " (the one case where this baseline wins on R²/RMSE)" : "";
+
+    var h1Model = series.proposed.r2[0], h1Persist = series.persistence.r2[0];
 
     panel.innerHTML =
       "<div class='panel-head'><h2>"+d.name+"</h2><span class='badge "+d.badge+"'>"+d.badgeLabel+"</span></div>" +
-      "<p class='panel-note'>Applied directly from the Bangkok-trained model, with no retraining or fine-tuning for this city.</p>" +
+      "<p class='panel-note'>Applied directly from the Bangkok-trained model, with no retraining or fine-tuning for this city. Compared against three baselines: the same backbone without the weather forecast and penalty, persistence, and seasonal-naive.</p>" +
       flagsHtml +
 
       "<p class='section-title'>At h=1 (one hour ahead)</p>" +
       "<div class='stat-row'>" +
-        "<div class='stat'><div class='k'>Model R²</div><div class='v'>"+fmt(d.h1.modelR2)+"</div></div>" +
-        "<div class='stat'><div class='k'>Persistence R²</div><div class='v'>"+fmt(d.h1.persistR2)+"</div></div>" +
-        "<div class='stat'><div class='k'>Δ R² (model − persist.)</div><div class='v'>"+signed(d.h1.dR2,4)+"</div></div>" +
+        "<div class='stat'><div class='k'>Model R²</div><div class='v'>"+fmt(h1Model)+"</div></div>" +
+        "<div class='stat'><div class='k'>Persistence R²</div><div class='v'>"+fmt(h1Persist)+"</div></div>" +
+        "<div class='stat'><div class='k'>Δ R² (model − persist.)</div><div class='v'>"+signed(h1Model-h1Persist,4)+"</div></div>" +
       "</div>" +
 
-      "<p class='section-title'>Average across all 12 horizons, vs. naive baselines</p>" +
-      "<div class='table-scroll'><table><thead><tr><th></th><th>Model</th><th>Persistence</th><th>Seasonal naive</th></tr></thead><tbody>" +
-      (function(){
-        var rmseWin = minIdx3(d.avg.modelRmse, d.avg.persistRmse, d.avg.seasonalRmse);
-        var smapeWin = minIdx3(d.avg.modelSmape, d.avg.persistSmape, d.avg.seasonalSmape);
-        function c(win,i){ return win===i ? "best" : ""; }
-        return "<tr><td>RMSE (µg/m³)</td><td class='"+c(rmseWin,0)+"'>"+fmt(d.avg.modelRmse,2)+"</td><td class='"+c(rmseWin,1)+"'>"+fmt(d.avg.persistRmse,2)+"</td><td class='"+c(rmseWin,2)+"'>"+fmt(d.avg.seasonalRmse,2)+"</td></tr>" +
-        "<tr><td>sMAPE</td><td class='"+c(smapeWin,0)+"'>"+pct(d.avg.modelSmape)+"</td><td class='"+c(smapeWin,1)+"'>"+pct(d.avg.persistSmape)+"</td><td class='"+c(smapeWin,2)+"'>"+pct(d.avg.seasonalSmape)+"</td></tr>";
-      })() +
-      "</tbody></table></div>" +
-      "<div class='chart-grid'>" +
-        "<div class='chart-card'><h4>Average RMSE, µg/m³ (lower is better)</h4>" +
-          miniBarChart([
-            {label:"Model", value:d.avg.modelRmse, color:"var(--green)"},
-            {label:"Persistence", value:d.avg.persistRmse, color:"var(--muted)"},
-            {label:"Seasonal naive", value:d.avg.seasonalRmse, color:"var(--muted)"}
-          ], {tickFmt:function(t){return t.toFixed(0);}, valFmt:function(v){return v.toFixed(2);}}) +
-        "</div>" +
-        "<div class='chart-card'><h4>Average sMAPE (lower is better)</h4>" +
-          miniBarChart([
-            {label:"Model", value:d.avg.modelSmape, color:"var(--green)"},
-            {label:"Persistence", value:d.avg.persistSmape, color:"var(--muted)"},
-            {label:"Seasonal naive", value:d.avg.seasonalSmape, color:"var(--muted)"}
-          ], {tickFmt:function(t){return t.toFixed(0)+"%";}, valFmt:function(v){return pct(v);}}) +
-        "</div>" +
-      "</div>" +
+      "<p class='section-title'>Summary, averaged across all 12 horizons</p>" +
+      cityStatsTable(series) +
       "<p class='horizon-note'>"+d.loses+"</p>" +
 
-      "<p class='section-title'>Vs. the CNN-BiLSTM baseline (no weather forecast or penalty)"+mechLossNote+"</p>" +
-      "<div class='table-scroll'><table><thead><tr><th></th><th>Proposed</th><th>Baseline</th></tr></thead><tbody>" +
-      "<tr><td>R² (avg)</td><td class='"+(d.mech.proposedR2>=d.mech.baselineR2?"best":"")+"'>"+fmt(d.mech.proposedR2)+"</td><td>"+fmt(d.mech.baselineR2)+"</td></tr>" +
-      "<tr><td>RMSE (avg, µg/m³)</td><td class='"+(d.mech.proposedRmse<=d.mech.baselineRmse?"best":"")+"'>"+fmt(d.mech.proposedRmse,2)+"</td><td>"+fmt(d.mech.baselineRmse,2)+"</td></tr>" +
-      "<tr><td>sMAPE (avg)</td><td class='"+(d.mech.proposedSmape<=d.mech.baselineSmape?"best":"")+"'>"+pct(d.mech.proposedSmape)+"</td><td>"+pct(d.mech.baselineSmape)+"</td></tr>" +
-      "</tbody></table></div>" +
-      "<div class='chart-grid cols-3'>" +
-        "<div class='chart-card'><h4>R² (higher is better)</h4>" +
-          miniBarChart([
-            {label:"Proposed", value:d.mech.proposedR2, color:"var(--green)"},
-            {label:"Baseline", value:d.mech.baselineR2, color:"var(--rust)"}
-          ], {higherBetter:true, width:170, tickFmt:function(t){return t.toFixed(1);}, valFmt:function(v){return fmt(v);}}) +
-        "</div>" +
-        "<div class='chart-card'><h4>RMSE, µg/m³ (lower is better)</h4>" +
-          miniBarChart([
-            {label:"Proposed", value:d.mech.proposedRmse, color:"var(--green)"},
-            {label:"Baseline", value:d.mech.baselineRmse, color:"var(--rust)"}
-          ], {width:170, tickFmt:function(t){return t.toFixed(0);}, valFmt:function(v){return v.toFixed(2);}}) +
-        "</div>" +
-        "<div class='chart-card'><h4>sMAPE (lower is better)</h4>" +
-          miniBarChart([
-            {label:"Proposed", value:d.mech.proposedSmape, color:"var(--green)"},
-            {label:"Baseline", value:d.mech.baselineSmape, color:"var(--rust)"}
-          ], {width:170, tickFmt:function(t){return t.toFixed(0)+"%";}, valFmt:function(v){return pct(v);}}) +
+      "<p class='section-title'>Across all 12 forecast horizons</p>" +
+      "<div class='chart-grid'>" +
+        "<div class='chart-card wide'><h4>R² by horizon (higher is better)</h4>" +
+          cityLineChart(series, "r2", {
+            tickFmt: function(t){ return t.toFixed(1); },
+            tooltipFmt: function(v){ return v.toFixed(3); }
+          }) +
         "</div>" +
       "</div>" +
+      "<div class='chart-grid'>" +
+        "<div class='chart-card'><h4>RMSE by horizon, µg/m³ (lower is better)</h4>" +
+          cityLineChart(series, "rmse", {
+            zeroBase: true,
+            tickFmt: function(t){ return t.toFixed(0); },
+            tooltipFmt: function(v){ return v.toFixed(2); }
+          }) +
+        "</div>" +
+        "<div class='chart-card'><h4>sMAPE by horizon (lower is better)</h4>" +
+          cityLineChart(series, "smape", {
+            zeroBase: true,
+            tickFmt: function(t){ return t.toFixed(0)+"%"; },
+            tooltipFmt: function(v){ return v.toFixed(1)+"%"; }
+          }) +
+        "</div>" +
+      "</div>" +
+      cityLegendHtml() +
       "<p class='horizon-note'>"+d.note+"</p>";
+
+    wireComparisonLegend(["proposed","baseline","persistence","seasonal"]);
+    wireCityChartHover(panel);
   }
 
   function select(key){
